@@ -90,7 +90,8 @@ const LoginScreen = ({ navigation }) => {
       
       // Set user data and type
       setUser(response.data);
-      setUserType(response.data.userType || 'citizen');
+      setUserType(response.data.userRole || 'citizen');
+      navigation.navigate('Home');
       
       Toast.show({
         type: 'success',
@@ -100,7 +101,7 @@ const LoginScreen = ({ navigation }) => {
       });
       
       // Navigate based on user type
-      if (response.data.userType === 'company') {
+      if (response.data.userRole === 'company') {
         navigation.navigate('CompanyHome');
       } else {
         navigation.navigate('Home');
