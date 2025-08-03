@@ -36,7 +36,7 @@ const RegisterScreen = ({ navigation, route }) => {
   const [companyContact, setCompanyContact] = useState("");
   const [referralCode, setReferralCode] = useState('');
   const [wasteTypes, setWasteTypes] = useState([]);
-  const [selectedWasteType, setSelectedWasteType] = useState('');
+  const [selectedWasteType, setSelectedWasteType] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -87,7 +87,7 @@ const RegisterScreen = ({ navigation, route }) => {
         return;
       }
     } else {
-      if (!companyName || !email || !phoneNumber || !password || !confirmPassword || !companyAddress || !companyContact || wasteTypes.length === 0) {
+    if (!companyName || !email || !phoneNumber || !password || !confirmPassword || !companyLocation || !companyContact || wasteTypes.length === 0) {
         Toast.show({ type: 'error', text1: 'Missing Fields', text2: 'Please fill out all fields for company registration, including waste types.' });
         return;
       }
@@ -113,52 +113,38 @@ const RegisterScreen = ({ navigation, route }) => {
 
     setIsLoading(true);
     try {
-      if (userType === "citizen") {
-        const response = await axios.post(
-          "https://trash2treasure-backend.onrender.com/register",
-          {
-            email,
-            fullNames: fullName,
-            password,
-            userAddress,
-            phoneNumber,
-            userType,
-            referralUsed: referralCode,
-          }
-        );
-        Toast.show({
-          type: "success",
-          text1: "Account Created",
-          text2: "Check your email to verify your account"
-        });
-        setTimeout(() => navigation.navigate("Login"), 1500);
-      } else {
-        const response = await axios.post(
-          "https://trash2treasure-backend.onrender.com/registerCompany",
-          {
-            companyName,
-            email,
-            phoneNumber,
-            companyAddress,
-            contactPersonalName: companyContact,
-            password,
-            wasteType: wasteTypes,
-          }
-        );
-        Toast.show({
-          type: "success",
-          text1: "Account Created",
-          text2: "Company account created successfully",
-        });
-        setTimeout(() => navigation.navigate("Login"), 1500);
-      }
-    } catch(error){
-              Toast.show({
-          type: "error",
-          text1: "Error occured",
-          text2: "Error occured creating account",
-        });
-        setTimeout(() => navigation.navigate("RegisterScreen"), 1500);
+      const userData = {
+        userType,
+        email,
+        password,
+        phoneNumber,
+        ...(userType === 'citizen' ? {
+          fullNames: fullName,
+          userAddress: location
+        } : {
+          companyName,
+          companyAddress,
+          companyContact,
+          wasteTypes
+        }),
+        ...(userType === 'citizen' && referralCode && { referralCode })
+      };
+
+      const response = await axios.post('https://trash2treasure-backend.onrender.com/register', userData);
+      Toast.show({
+        type: 'success',
+        text1: 'Account Created',
+        text2: userType === 'citizen' ? 'Check your email to verify your account' : 'Company account created successfully'
+      });
+      setTimeout(() => navigation.navigate('Login'), 1500);
+    } catch (error) {
+      Toast.show({
+        type: "error",
+        text1: "Registration failed",
+        text2: error?.response?.data?.message || "Registration failed.",
+      });
+    } finally {
+      setIsLoading(false);
     }
   }
   return (
@@ -395,7 +381,6 @@ const RegisterScreen = ({ navigation, route }) => {
                       keyboardType="phone-pad"
                     />
                   </View>
-
                   {/* Referral Code Field (Citizens Only) */}
                   {userType === 'citizen' && (
                     <View style={[styles.inputContainer, isSmallScreen && styles.inputContainerSmall, isTablet && styles.inputContainerTablet]}>
@@ -496,12 +481,11 @@ const RegisterScreen = ({ navigation, route }) => {
                           onChangeText={setCompanyContact}
                         />
                       </View>
-                      
                       {/* Waste Types Selection */}
                       <View style={styles.wasteTypesContainer}>
                         <Text style={styles.wasteTypesTitle}>Waste Types You Collect:</Text>
                         <View style={styles.wasteTypesGrid}>
-                          {['Plastic', 'Paper', 'Glass', 'Metal', 'Electronics', 'Organic', 'Textiles', 'Batteries'].map((type) => (
+                          {['Biodegradable', 'Non biodegradable', 'Recyclable', 'Hazardous',"Organic","Inorganic"].map((type) => (
                             <TouchableOpacity
                               key={type}
                               style={[
@@ -1040,40 +1024,7 @@ const styles = StyleSheet.create({
     color: "#11998e",
   },
   userTypeTextActive: {
-    color: '#fff',
-  },
-  wasteTypesContainer: {
-    marginBottom: 20,
-  },
-  wasteTypesTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 12,
-  },
-  wasteTypesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  wasteTypeButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: '#11998e',
-    backgroundColor: '#fff',
-  },
-  wasteTypeButtonActive: {
-    backgroundColor: '#11998e',
-  },
-  wasteTypeText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: '#11998e',
-  },
-  wasteTypeTextActive: {
-    color: '#fff',
+    color: "#fff",
   },
 });
 

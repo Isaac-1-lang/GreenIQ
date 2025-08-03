@@ -1,3 +1,4 @@
+
 {
   "name": "Trash2Treasure",
   "license": "0BSD",
@@ -52,3 +53,57 @@
   "private": true
 }
 
+{
+  "name": "Trash2Treasure",
+  "license": "0BSD",
+  "version": "1.0.0",
+  "main": "App.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web"
+  },
+  "dependencies": {
+    "@expo/metro-runtime": "~5.0.4",
+    "@expo/vector-icons": "^14.1.0",
+    "@react-native-async-storage/async-storage": "2.1.2",
+    "@react-native-community/netinfo": "11.4.1",
+    "@react-navigation/bottom-tabs": "^7.4.2",
+    "@react-navigation/native": "^7.1.6",
+    "@react-navigation/stack": "^7.2.10",
+    "axios": "^1.10.0",
+    "expo": "^53.0.19",
+    "expo-blur": "~14.1.5",
+    "expo-camera": "~16.1.9",
+    "expo-clipboard": "^7.1.5",
+    "expo-haptics": "~14.1.4",
+    "expo-image-picker": "~16.1.4",
+    "expo-linear-gradient": "~14.1.5",
+    "expo-location": "~18.1.6",
+    "expo-secure-store": "~14.2.3",
+    "expo-status-bar": "~2.2.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-native": "^0.79.5",
+    "react-native-chart-kit": "^6.12.0",
+    "react-native-elements": "^3.4.3",
+    "react-native-gesture-handler": "~2.24.0",
+    "react-native-maps": "1.20.1",
+    "react-native-reanimated": "~3.17.4",
+    "react-native-responsive-screen": "^1.4.2",
+    "react-native-responsive-screen": "^1.4.2",
+    "react-native-safe-area-context": "^5.4.0",
+    "react-native-screens": "~4.11.1",
+    "react-native-svg": "^15.12.0",
+    "react-native-toast-message": "^2.3.3",
+    "react-native-url-polyfill": "^2.0.0",
+    "react-native-vector-icons": "^10.2.0",
+    "react-native-web": "^0.20.0",
+    "react-native-webview": "13.13.5"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.26.0"
+  },
+  "private": true
+}

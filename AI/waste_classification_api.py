@@ -34,7 +34,7 @@ waste_reports = []
 @app.route("/", methods=["GET"])
 def home():
     return jsonify({
-        "message": "🚀 Flask server is running successfully!",
+        "message": "Flask server is running successfully!",
         "server_info": {
             "device": str(device),
             "model_loaded": model is not None,
@@ -54,25 +54,25 @@ def health_check():
         "status": "healthy",
         "device": str(device),
         "model_loaded": model is not None,
-        "message": "✅ Server is running successfully",
+        "message": "Server is running successfully",
         "version": "1.0"
     })
 
 # PREDICTION ROUTE
 @app.route("/predict", methods=["POST"])
 def predict_image():
-    print("📤 Received request to /predict")
+    print("Received request to /predict")
     
     if "image" not in request.files:
-        print("❌ No image in request")
+        print("No image in request")
         return jsonify({"error": "No image uploaded", "success": False}), 400
 
     file = request.files["image"]
-    print(f"📸 Received image: {file.filename}")
+    print(f"Received image: {file.filename}")
 
     try:
         image = Image.open(file).convert("RGB")
-        print(f"🖼️  Image loaded: {image.size}")
+        print(f"Image loaded: {image.size}")
         
         inputs = processor(images=image, return_tensors="pt").to(device)
         
@@ -85,7 +85,7 @@ def predict_image():
         result = id2label[pred.item()]
         confidence = conf.item()
         
-        print(f"🎯 Prediction: {result}, Confidence: {confidence:.4f}")
+        print(f"Prediction: {result}, Confidence: {confidence:.4f}")
         
         return jsonify({
             "prediction": result,
@@ -95,7 +95,7 @@ def predict_image():
         })
 
     except Exception as e:
-        print(f"💥 Error in prediction: {str(e)}")
+        print(f"Error in prediction: {str(e)}")
         return jsonify({
             "error": f"Classification failed: {str(e)}", 
             "success": False
@@ -124,12 +124,12 @@ def waste_report():
         }
     }
     """
-    print("📍 Received waste report from mobile app")
+    print("Received waste report from mobile app")
     
     try:
         # Check if request contains JSON data
         if not request.is_json:
-            print("❌ Request is not JSON")
+            print("Request is not JSON")
             return jsonify({
                 "error": "Request must be JSON",
                 "success": False,
@@ -137,11 +137,11 @@ def waste_report():
             }), 400
         
         data = request.get_json()
-        print(f"📊 Received data: {data}")
+        print(f"Received data: {data}")
         
         # Validate required fields
         if not data:
-            print("❌ No JSON data received")
+            print("No JSON data received")
             return jsonify({
                 "error": "No data received",
                 "success": False,
@@ -150,7 +150,7 @@ def waste_report():
         
         # Check for required waste_type field
         if "waste_type" not in data or not data["waste_type"]:
-            print("❌ Missing waste_type field")
+            print("Missing waste_type field")
             return jsonify({
                 "error": "Missing waste_type field",
                 "success": False,
@@ -159,7 +159,7 @@ def waste_report():
         
         # Check for required location field
         if "location" not in data or not data["location"]:
-            print("❌ Missing location field")
+            print("Missing location field")
             return jsonify({
                 "error": "Missing location field", 
                 "success": False,
@@ -170,7 +170,7 @@ def waste_report():
         
         # Validate location has latitude and longitude
         if "latitude" not in location or "longitude" not in location:
-            print("❌ Missing latitude or longitude in location")
+            print("Missing latitude or longitude in location")
             return jsonify({
                 "error": "Invalid location format",
                 "success": False,
@@ -182,7 +182,7 @@ def waste_report():
             lat = float(location["latitude"])
             lng = float(location["longitude"])
         except (ValueError, TypeError):
-            print("❌ Invalid latitude or longitude values")
+            print("Invalid latitude or longitude values")
             return jsonify({
                 "error": "Invalid coordinates",
                 "success": False,
@@ -191,7 +191,7 @@ def waste_report():
         
         # Validate latitude and longitude ranges
         if not (-90 <= lat <= 90):
-            print(f"❌ Invalid latitude: {lat}")
+            print(f"Invalid latitude: {lat}")
             return jsonify({
                 "error": "Invalid latitude",
                 "success": False,
@@ -199,7 +199,7 @@ def waste_report():
             }), 400
         
         if not (-180 <= lng <= 180):
-            print(f"❌ Invalid longitude: {lng}")
+            print(f"Invalid longitude: {lng}")
             return jsonify({
                 "error": "Invalid longitude",
                 "success": False,
@@ -222,12 +222,12 @@ def waste_report():
         # Store the report (replace with database save in production)
         waste_reports.append(waste_report)
         
-        print(f"✅ Waste report saved successfully!")
+        print(f"Waste report saved successfully!")
         print(f"   ID: {waste_report['id']}")
         print(f"   Type: {waste_report['waste_type']}")
         print(f"   Location: ({lat:.6f}, {lng:.6f})")
         print(f"   Timestamp: {waste_report['reported_at']}")
-        print(f"📊 Total reports in database: {len(waste_reports)}")
+        print(f"Total reports in database: {len(waste_reports)}")
         
         # Return success response to mobile app
         return jsonify({
@@ -242,7 +242,7 @@ def waste_report():
         }), 200
         
     except Exception as e:
-        print(f"💥 Error in waste reporting: {str(e)}")
+        print(f"Error in waste reporting: {str(e)}")
         return jsonify({
             "error": "Internal server error",
             "success": False,
@@ -254,14 +254,14 @@ def waste_report():
 def get_waste_reports():
     """Get all waste reports - useful for debugging"""
     try:
-        print(f"📊 Returning {len(waste_reports)} waste reports")
+        print(f"Returning {len(waste_reports)} waste reports")
         return jsonify({
             "success": True,
             "total_reports": len(waste_reports),
             "reports": waste_reports
         }), 200
     except Exception as e:
-        print(f"💥 Error getting waste reports: {str(e)}")
+        print(f"Error getting waste reports: {str(e)}")
         return jsonify({
             "error": "Failed to get reports",
             "success": False
@@ -312,7 +312,7 @@ if __name__ == "__main__":
     print(f"• POST http://192.168.0.109:{port}/predict")
     print(f"• POST http://192.168.0.109:{port}/api/waste-report (NEW)")
     print(f"• GET  http://192.168.0.109:{port}/api/waste-reports")
-    print("\n📱 Ready to receive data from React Native app!")
+    print("\nReady to receive data from React Native app!")
     print("=" * 50)
     
     app.run(host="0.0.0.0", port=port, debug=True)

@@ -18,11 +18,11 @@ const { width } = Dimensions.get('window');
 const LocationSelectionScreen = ({ navigation }) => {
   const [selectedPoint, setSelectedPoint] = useState(null);
 
-  const rwandaRegion = {
-    latitude: -1.9403,
-    longitude: 30.8739,
-    latitudeDelta: 1.5,
-    longitudeDelta: 1.5,
+  const seoulRegion = {
+    latitude: 37.5665,
+    longitude: 126.9780,
+    latitudeDelta: 0.3,
+    longitudeDelta: 0.3,
   };
 
   const confirmSelection = () => {
@@ -47,7 +47,7 @@ const LocationSelectionScreen = ({ navigation }) => {
         <MapView
           provider={PROVIDER_GOOGLE}
           style={styles.map}
-          initialRegion={rwandaRegion}
+          initialRegion={seoulRegion}
         >
           {wastePoints.map((point) => (
             <Marker
