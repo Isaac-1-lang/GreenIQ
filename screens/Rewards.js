@@ -57,61 +57,25 @@ export default function Rewards({ navigation }) {
   const [rewards, setRewards] = useState([]);
   const [user, setUser] = useState(null);
   useEffect(() => {
-    const getUserinfo = async () => {
-      try {
-        const response = await axios.get(
-          "https://trash2treasure-backend.onrender.com/userInfo"
-        );
-        setUser(response.data);
-      } catch (error) {
-        Toast.show({
-          type: "error",
-          text1: "You must login first",
-          text2: "Please login or create account first",
-        });
-        navigation.navigate("Login");
-      }
-    };
-    getUserinfo();
+    // Using dummy user data
+    const { dummyUserProfile } = require('../utils/dummyData');
+    setUser(dummyUserProfile);
   }, []);
 
-
   useEffect(() => {
-    const getRewards = async () => {
-      const response = await axios.get(
-        "https://trash2treasure-backend.onrender.com/getRewards"
-      );
-      setRewards(response.data.message);
-    };
-
-    getRewards();
+    // Using dummy rewards data
+    const { dummyRewards } = require('../utils/dummyData');
+    setRewards(dummyRewards.message);
   }, []);
 
   const handleRedeem = async (reward) => {
-    try {
-      const rewardId = reward._id;
-      const response = await axios.post(
-        "https://trash2treasure-backend.onrender.com/buyReward",
-        {
-          rewardId,
-        }
-      );
-
-      Alert.alert(response.data.message);
-      Toast.show({
-        type: "success",
-        text1: "Success",
-        text2: response.data.message,
-        position: "bottom",
-      });
-    } catch (error) {
-      Toast.show({
-        type: "error",
-        text1: "Error",
-        text2: error?.response?.data?.message,
-        position: "top",
-      });
-    }
+    // Using dummy data - simulating reward redemption
+    Toast.show({
+      type: "success",
+      text1: "Success",
+      text2: "Reward redeemed successfully!",
+      position: "bottom",
+    });
   };
 
   // const confirmRedeem = () => {
@@ -175,7 +139,7 @@ export default function Rewards({ navigation }) {
             Your Eco Points
           </Text>
           <Text style={{ color: "#1B5E20", fontWeight: "bold", fontSize: 28 }}>
-            {user ? user.points : 'Loading...'}
+            {user ? user.ecoPoints : 'Loading...'}
           </Text>
         </LinearGradient>
       </View>
@@ -192,14 +156,14 @@ export default function Rewards({ navigation }) {
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <Image
                 source={{
-                  uri: `https://trash2treasure-backend.onrender.com/${reward.rewardImage}`,
+                  uri: reward.image || 'https://via.placeholder.com/200',
                 }}
                 style={styles.rewardImage}
               />
               <View style={{ flex: 1, marginLeft: 16 }}>
-                <Text style={styles.rewardName}>{reward.rewardName}</Text>
+                <Text style={styles.rewardName}>{reward.name}</Text>
                 <Text style={styles.rewardDesc}>
-                  {reward.rewardDescription}
+                  {reward.description}
                 </Text>
                 <View
                   style={{
@@ -210,7 +174,7 @@ export default function Rewards({ navigation }) {
                 >
                   <Ionicons name="leaf" size={18} color="#00C896" />
                   <Text style={styles.rewardCost}>
-                    {reward.rewardCostPoints} Eco Points
+                    {reward.ecoPointsRequired} Eco Points
                   </Text>
                 </View>
               </View>

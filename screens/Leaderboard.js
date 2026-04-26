@@ -20,23 +20,9 @@ export default function Leaderboard({ navigation }) {
   const [allUsers, setAllUsers] = useState(null);
 
   useEffect(() => {
-    const leaderBoard = async () => {
-      try {
-        const response = await axios.get(
-          "https://trash2treasure-backend.onrender.com/leaderboard"
-        );
-        setAllUsers(response.data.leaderBoard);
-      } catch (error) {
-        console.log(error)
-        console.log(error?.response)
-        console.log(data?.message)
-        setTimeout(() => {
-          Alert.alert(error?.response?.data?.message);
-        }, 100);
-      }
-    };
-
-    leaderBoard()
+    // Using dummy leaderboard data
+    const { dummyLeaderboard } = require('../utils/dummyData');
+    setAllUsers(dummyLeaderboard.leaderBoard);
   }, []);
 
   return (
@@ -133,7 +119,7 @@ export default function Leaderboard({ navigation }) {
             </View>
             {/* Avatar */}
             <Image
-              source={{ uri: `https://trash2treasure-backend.onrender.com/${user.profilePic}` }}
+              source={{ uri: user.profileImage || 'https://via.placeholder.com/150' }}
               style={{
                 width: 54,
                 height: 54,
@@ -152,7 +138,7 @@ export default function Leaderboard({ navigation }) {
                   color: "#1B5E20",
                 }}
               >
-                {user.fullNames}
+                {user.name}
               </Text>
               <Text
                 style={{
@@ -161,7 +147,7 @@ export default function Leaderboard({ navigation }) {
                   marginTop: 2,
                 }}
               >
-                {user.points} pts
+                {user.ecoPoints} pts
               </Text>
             </View>
           </LinearGradient>

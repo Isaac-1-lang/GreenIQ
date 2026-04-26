@@ -17,22 +17,9 @@ import axios from "axios";
 export default function ReferralScreen({ navigation, route }) {
   const [user, setUser] = useState(null);
   useEffect(() => {
-    const getUserinfo = async () => {
-      try {
-        const response = await axios.get(
-          "https://trash2treasure-backend.onrender.com/userInfo"
-        );
-        setUser(response.data);
-      } catch (error) {
-        Toast.show({
-          type: "error",
-          text1: "You must login first",
-          text2: "Please login or create account first",
-        });
-        navigation.navigate("Login");
-      }
-    };
-    getUserinfo();
+    // Using dummy user data
+    const { dummyUserProfile } = require('../utils/dummyData');
+    setUser(dummyUserProfile);
   }, []);
   // Accept user and collectionPoint from navigation params if provided
   const collectionPoint = route?.params?.collectionPoint || null;
@@ -99,7 +86,7 @@ export default function ReferralScreen({ navigation, route }) {
           source={
             user
               ? {
-                  uri: `https://trash2treasure-backend.onrender.com/${user.profilePic}`,
+                  uri: user.profileImage || 'https://via.placeholder.com/150',
                 }
               : require("../assets/logo.png")
           }
@@ -107,7 +94,7 @@ export default function ReferralScreen({ navigation, route }) {
         />
         <View style={{ marginLeft: 14 }}>
           <Text style={styles.userName}>
-            {user ? user.fullNames : "Loading..."}
+            {user ? user.name : "Loading..."}
           </Text>
           <Text style={styles.userEmail}>
             {user ? user.email : "Loading..."}
@@ -122,7 +109,7 @@ export default function ReferralScreen({ navigation, route }) {
               style={{ marginRight: 6 }}
             />
             <Text style={styles.ecoPoints}>
-              {user ? user.points : "Loading..."} Eco Points
+              {user ? user.ecoPoints : "Loading..."} Eco Points
             </Text>
           </View>
         </View>

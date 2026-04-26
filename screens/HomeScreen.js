@@ -20,6 +20,8 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from 'expo-haptics';
+import BinBuddy from '../components/BinBuddy';
+import CommunityPulse from '../components/CommunityPulse';
 
 const { width, height } = Dimensions.get("window");
 
@@ -72,35 +74,10 @@ const HomeScreen = ({ navigation }) => {
   const isSmallDevice = window.width < 350;
 
   useEffect(() => {
-    const getUserinfo = async () => {
-      try {
-        const response = await axios.get(
-          "https://trash2treasure-backend.onrender.com/userInfo",
-          { timeout: 5000 }
-        );
-        setUser(response.data);
-        setIsOffline(false);
-      } catch (error) {
-        if (error.code === 'ECONNABORTED' || error.message === 'Network Error') {
-          setIsOffline(true);
-          Toast.show({
-            type: 'info',
-            text1: 'Offline Mode',
-            text2: 'Showing cached data',
-          });
-        } else {
-          Toast.show({
-            type: "error",
-            text1: "You must login first",
-            text2: "Please login or create account first",
-          });
-          navigation.navigate("Login");
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    getUserinfo();
+    // Using dummy user data
+    const { dummyUserProfile } = require('../utils/dummyData');
+    setUser(dummyUserProfile);
+    setIsLoading(false);
     RNAnimated.parallel([
       RNAnimated.spring(scanAnim, {
         toValue: 1,
@@ -158,18 +135,11 @@ const HomeScreen = ({ navigation }) => {
   const onRefresh = async () => {
     setRefreshing(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    try {
-      const response = await axios.get(
-        "https://trash2treasure-backend.onrender.com/userInfo",
-        { timeout: 5000 }
-      );
-      setUser(response.data);
-      setIsOffline(false);
-    } catch (error) {
-      setIsOffline(true);
-    } finally {
-      setRefreshing(false);
-    }
+    // Using dummy data - simulating refresh
+    const { dummyUserProfile } = require('../utils/dummyData');
+    setUser(dummyUserProfile);
+    setIsOffline(false);
+    setRefreshing(false);
   };
 
   const handleLikeTip = (index) => {
@@ -325,7 +295,7 @@ const HomeScreen = ({ navigation }) => {
         <View style={styles.simpleTopNavLeft}>
           <Text style={styles.simpleTopNavGreeting}>Welcome back,</Text>
           <Text style={styles.simpleTopNavUserName} numberOfLines={1} adjustsFontSizeToFit>
-            {user ? user.fullNames : "Guest User"}
+            {user ? user.name : "Guest User"}
           </Text>
         </View>
         <TouchableOpacity
@@ -334,9 +304,9 @@ const HomeScreen = ({ navigation }) => {
           accessibilityLabel={user ? "Go to profile" : "Login"}
         >
           <View style={styles.simpleTopNavAvatarWrap}>
-            {user && user.profilePic ? (
+            {user && user.profileImage ? (
               <Image
-                source={{ uri: `https://trash2treasure-backend.onrender.com/${user.profilePic}` }}
+                source={{ uri: user.profileImage || 'https://via.placeholder.com/150' }}
                 style={styles.simpleTopNavAvatar}
               />
             ) : (
@@ -369,6 +339,15 @@ const HomeScreen = ({ navigation }) => {
             </View>
           </LinearGradient>
         </TouchableOpacity>
+
+        {/* Bin Buddy - Emotional UI */}
+        <TouchableOpacity onPress={() => navigation.navigate('Quiz')} activeOpacity={0.9}>
+          <BinBuddy fillPercentage={45} />
+        </TouchableOpacity>
+
+        {/* Community Pulse - Live Feed */}
+        <CommunityPulse />
+
         <View style={compactQuickLinksRow}>
           {[{ icon: 'scan-outline', label: 'Scan', nav: 'ScanChoice' }, { icon: 'medal-outline', label: 'Badges', nav: 'Achievements' }, { icon: 'analytics-outline', label: 'Stats', nav: 'EcoPointsDetails' }, { icon: 'chatbubbles-outline', label: 'Community', nav: 'Chat' }].map((item, idx) => (
             <TouchableOpacity key={item.label} style={styles.quickLinkButton} onPress={() => navigation.navigate(item.nav)} activeOpacity={0.85}>

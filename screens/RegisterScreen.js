@@ -130,7 +130,9 @@ const RegisterScreen = ({ navigation, route }) => {
         ...(userType === 'citizen' && referralCode && { referralCode })
       };
 
-      const response = await axios.post('https://trash2treasure-backend.onrender.com/register', userData);
+      // Using dummy data instead of backend API
+      const { dummyUsers } = require('../utils/dummyData');
+      
       Toast.show({
         type: 'success',
         text1: 'Account Created',

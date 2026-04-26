@@ -57,18 +57,8 @@ const ProductScanScreen = () => {
   }, []);
 
   const handleScanProduct = async (barcode) => {
-    try {
-      const response = await axios.post(
-        "https://trash2treasure-backend.onrender.com/scanProduct",
-        {
-          barcode: barcode,
-        }
-      );
-
-      Alert.alert(response.data.message)
-    } catch (error) {
-      Alert.alert(error?.response?.data?.message || "Unexpected error")
-    }
+    // Using dummy data - simulating backend response
+    Alert.alert("Product scanned successfully!");
   };
 
   const handleBarcodeScanned = async ({ type, data }) => {
@@ -81,24 +71,19 @@ const ProductScanScreen = () => {
       }
     }, 500);
     try {
-      const response = await fetch(
-        `https://world.openfoodfacts.org/api/v0/product/${data}.json`
-      );
-      const json = await response.json();
+      // Using dummy product data instead of OpenFoodFacts API
+      const { dummyProductInfo } = require('../utils/dummyData');
+      const { getProductGrades } = require('../utils/ProductGrade');
+      
+      const gradedProduct = await getProductGrades([dummyProductInfo.product]);
+      setProduct(gradedProduct[0]);
 
-      if (json.status === 1) {
-        const gradedProduct = await getProductGrades([json.product]);
-        setProduct(gradedProduct[0]);
-
-        const deepSeekAnalysis = await deepSeekRecommendation(json.product);
-        const videoId = await extractYoutubeUrl();
-        const cleanedText = await cleanText(deepSeekAnalysis);
-        setAnalysis(cleanedText);
-        setVideoId(videoId);
-        await handleScanProduct(gradedProduct[0].code);
-      } else {
-        Alert.alert("No product found");
-      }
+      const deepSeekAnalysis = await deepSeekRecommendation(dummyProductInfo.product);
+      const videoId = await extractYoutubeUrl();
+      const cleanedText = await cleanText(deepSeekAnalysis);
+      setAnalysis(cleanedText);
+      setVideoId(videoId);
+      await handleScanProduct(gradedProduct[0].code);
     } catch (error) {
       Alert.alert("An error occured")
     }

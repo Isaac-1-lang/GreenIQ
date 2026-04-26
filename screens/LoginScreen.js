@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import axios from 'axios';
+import { Image } from 'react-native';
 import {
   StyleSheet,
   View,
@@ -83,14 +84,13 @@ const LoginScreen = ({ navigation }) => {
     }
     setIsLoading(true);
     try {
-      const response = await axios.post('https://trash2treasure-backend.onrender.com/Login', {
-        email,
-        password
-      });
+      // Using dummy data instead of backend API
+      const { dummyUsers } = require('../utils/dummyData');
+      const user = dummyUsers[0]; // Simulate finding user
       
       // Set user data and type
-      setUser(response.data);
-      setUserType(response.data.userRole || 'citizen');
+      setUser(user);
+      setUserType(user.userRole || 'citizen');
       navigation.navigate('Home');
       
       Toast.show({
@@ -173,7 +173,6 @@ const LoginScreen = ({ navigation }) => {
                     },
                   ]}
                 >
-                  <Ionicons name="leaf" size={isTablet ? 70 : isSmallScreen ? 40 : 50} color="#11998e" style={styles.logoIcon} />
                   <Text style={[styles.appName, isSmallScreen && styles.appNameSmall, isTablet && styles.appNameTablet]}>
                     Green IQ
                   </Text>

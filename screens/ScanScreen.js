@@ -31,6 +31,16 @@ const ScanScreen = () => {
   const SERVER_URL = 'http://192.168.0.105:10000';
   const SERVER_URL_1 = 'https://waste-classifier-modal-6.onrender.com';
 
+  // Using dummy classification results
+  const dummyClassificationResult = {
+    label: 'biodegradable',
+    confidence: 0.92,
+    description: 'This type of waste breaks down naturally and is good for composting.',
+    recyclable: false,
+    disposal: 'Use compost or organic bin',
+    example_items: ['banana peel', 'food waste', 'paper'],
+  };
+
   const ecoFacts = [
     'Recycling one aluminum can saves enough energy to run a TV for 3 hours.',
     'Plastic can take up to 1,000 years to decompose in landfills.',
@@ -117,75 +127,22 @@ const ScanScreen = () => {
     setUploadProgress(0);
     
     try {
-      const photo = photos[0];
+      // Simulate upload with dummy data
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
-      const formData = new FormData();
-      formData.append('image', {
-        uri: photo.uri,
-        type: 'image/jpeg', 
-        name: 'image.jpg', 
-      });
-      const response = await Promise.race([
-        fetch(`${SERVER_URL}/predict`, {
-          method: 'POST',
-          body: formData,
-          headers: {
-            'Accept': 'application/json',
-          },
-        }),
-        new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Request timeout')), 90000)
-        )
-      ]);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Server error (${response.status}): ${errorText}`);
-      }
-
-      const data = await response.json();
-
+      const photo = photos[0];
+      const result = {
+        ...dummyClassificationResult,
+        image: photo.uri,
+      };
+      
       setUploading(false);
       setUploadProgress(100);
-      
-      if (data && data.success !== false && (data.prediction || data.label)) {
-        const result = {
-          label: data.prediction || data.label,
-          confidence: parseFloat(data.confidence || 0),
-          description: (data.prediction || data.label) === 'biodegradable' 
-            ? 'Easily breaks down naturally. Good for composting.'
-            : 'Does not break down easily. Should be disposed of carefully.',
-          recyclable: (data.prediction || data.label) !== 'biodegradable',
-          disposal: (data.prediction || data.label) === 'biodegradable'
-            ? 'Use compost or organic bin'
-            : 'Use general waste bin or recycling if possible',
-          example_items: (data.prediction || data.label) === 'biodegradable'
-            ? ['banana peel', 'food waste', 'paper']
-            : ['plastic bag', 'styrofoam', 'metal can'],
-          image: photo.uri,
-        };
-        navigation.navigate('ClassificationResult', { result });
-      } else {
-        setFallbackFact(ecoFacts[Math.floor(Math.random() * ecoFacts.length)]);
-        setShowFallback(true);
-      }
+      navigation.navigate('ClassificationResult', { result });
     } catch (error) {
       setUploading(false);
       setUploadProgress(0);
-      
-      let errorMessage = 'Failed to classify image. Please check your connection and try again.';
-      if (error.message.includes('timeout')) {
-        errorMessage = 'Request timed out. Please check your internet connection.';
-      } else if (error.message.includes('Network request failed')) {
-        errorMessage = 'Network error. Please check if the server is running and accessible.';
-      } else if (error.message) {
-        errorMessage = error.message;
-      }
-      
-      Alert.alert('Upload Error', errorMessage, [
-        { text: 'Try Again', onPress: () => handleUpload() },
-        { text: 'Cancel', style: 'cancel' }
-      ]);
+      Alert.alert('Upload Error', 'Failed to classify image. Please try again.');
     }
   };
 

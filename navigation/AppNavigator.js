@@ -9,6 +9,7 @@ import ScanChoiceScreen from '../screens/ScanChoiceScreen';
 import ProductScanScreen from '../screens/ProductScanScreen';
 import ScanScreen from '../screens/ScanScreen';
 import ClassificationResultScreen from '../screens/ClassificationResultScreen';
+import QuizScreen from '../screens/QuizScreen';
 import { Text, View } from 'react-native';
 
 const Stack = createStackNavigator();
@@ -47,6 +48,7 @@ export default function AppNavigator() {
         }} 
       />
       <Stack.Screen name="Challenges" component={ChallengesScreen} options={{ title: 'Challenges' }} />
+      <Stack.Screen name="Quiz" component={QuizScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Achievements" component={Achievements} options={{ title: 'Achievements', headerShown: false }} />
     </Stack.Navigator>
   );

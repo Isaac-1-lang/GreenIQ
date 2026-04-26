@@ -87,36 +87,10 @@ const CompanyPortal = ({ navigation }) => {
   const isSmallDevice = window.width < 350;
 
   useEffect(() => {
-    const getCompanyInfo = async () => {
-      try {
-        const response = await axios.get(
-          "https://trash2treasure-backend.onrender.com/companyInfo",
-          { timeout: 5000 }
-        );
-        setCompany(response.data);
-        setIsOffline(false);
-      } catch (error) {
-        if (error.code === 'ECONNABORTED' || error.message === 'Network Error') {
-          setIsOffline(true);
-          Toast.show({
-            type: 'info',
-            text1: 'Offline Mode',
-            text2: 'Showing cached data',
-          });
-        } else {
-          Toast.show({
-            type: "error",
-            text1: "You must login first",
-            text2: "Please login or create account first",
-          });
-          navigation.navigate("Login");
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    getCompanyInfo();
+    // Using dummy company data
+    const { dummyCompanyData } = require('../utils/dummyData');
+    setCompany(dummyCompanyData);
+    setIsLoading(false);
   }, []);
 
   useEffect(() => {
@@ -153,17 +127,11 @@ const CompanyPortal = ({ navigation }) => {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    try {
-      const response = await axios.get(
-        "https://trash2treasure-backend.onrender.com/companyInfo"
-      );
-      setCompany(response.data);
-      setIsOffline(false);
-    } catch (error) {
-      setIsOffline(true);
-    } finally {
-      setRefreshing(false);
-    }
+    // Using dummy data - simulating refresh
+    const { dummyCompanyData } = require('../utils/dummyData');
+    setCompany(dummyCompanyData);
+    setIsOffline(false);
+    setRefreshing(false);
   };
 
   const handleLikeTip = (index) => {

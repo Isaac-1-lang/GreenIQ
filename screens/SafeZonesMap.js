@@ -4,23 +4,19 @@ import MapView, { Marker, Callout, PROVIDER_GOOGLE } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
 
-const safeZones = [
-  { id: 1, name: 'Nyarugenge Safe Zone', coords: { latitude: -1.9477, longitude: 30.0567 }, address: 'Gitega, Nyarugenge', description: 'Shelter and support during climate events.' },
-  { id: 2, name: 'Gasabo Safe Zone', coords: { latitude: -1.9333, longitude: 30.0800 }, address: 'Kacyiru, Gasabo', description: 'Open for shelter and cooling.' },
-  { id: 3, name: 'Kicukiro Safe Zone', coords: { latitude: -1.9750, longitude: 30.1100 }, address: 'Niboye, Kicukiro', description: 'Safe zone for heatwaves and floods.' },
-];
-
-const alerts = [
-  { id: 1, text: 'Heavy rainfall expected in Gasabo. Safe zones open for shelter.' },
-  { id: 2, text: 'Flood risk near Nyarugenge. Use alternate safe zone.' },
-  { id: 3, text: 'Heatwave alert: Stay hydrated and visit safe zones for cooling.' },
-];
-
-export default function SafeZonesMap({ navigation }) {
+const SafeZonesMap = ({ navigation }) => {
   const mapRef = useRef(null);
   const [notifVisible, setNotifVisible] = useState(false);
   const [userLocation, setUserLocation] = useState(null);
   const [search, setSearch] = useState('');
+  const { dummySafeZones } = require('../utils/dummyData');
+  const [safeZones] = useState(dummySafeZones);
+
+  const alerts = [
+    { id: 1, text: 'Heavy rainfall expected in Gasabo. Safe zones open for shelter.' },
+    { id: 2, text: 'Flood risk near Nyarugenge. Use alternate safe zone.' },
+    { id: 3, text: 'Heatwave alert: Stay hydrated and visit safe zones for cooling.' },
+  ];
 
   useEffect(() => {
     (async () => {
@@ -182,4 +178,6 @@ const styles = StyleSheet.create({
     marginLeft: 6,
     fontSize: 15,
   },
-}); 
+});
+
+export default SafeZonesMap;

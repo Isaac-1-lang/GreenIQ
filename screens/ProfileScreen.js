@@ -19,34 +19,15 @@ import { LinearGradient } from "expo-linear-gradient";
 const ProfileScreen = ({ navigation }) => {
   const [user, setUser] = useState(null);
   useEffect(() => {
-    const getUserinfoProfile = async () => {
-      try {
-        const response = await axios.get(
-          "https://trash2treasure-backend.onrender.com/userInfo"
-        );
-        setUser(response.data);
-      } catch (error) {
-        setTimeout(() => {
-          Alert.alert(error?.response?.data?.message || "An error occured");
-        }, 100);
-        navigation.navigate("Login");
-      }
-    };
-    getUserinfoProfile();
+    // Using dummy user profile data
+    const { dummyUserProfile } = require('../utils/dummyData');
+    setUser(dummyUserProfile);
   }, []);
 
   const handleLogout = async () => {
-    try {
-      const response = await axios.get(
-        "https://trash2treasure-backend.onrender.com/logout"
-      );
-      setTimeout(() => {
-        Alert.alert("Logged out");
-      }, 100);
-      navigation.navigate("Login");
-    } catch (error) {
-      Alert.alert("Error occured logging out");
-    }
+    // Using dummy logout - simulating backend response
+    Alert.alert("Logged out");
+    navigation.navigate("Login");
   };
 
   return (
@@ -56,7 +37,7 @@ const ProfileScreen = ({ navigation }) => {
           {user ? (
             <Image
               source={{
-                uri: `https://trash2treasure-backend.onrender.com/${user.profilePic}`,
+                uri: user.profileImage || 'https://via.placeholder.com/150',
               }}
               style={styles.avatar}
             />
@@ -66,7 +47,7 @@ const ProfileScreen = ({ navigation }) => {
             </View>
           )}
           <Text style={styles.userName}>
-            {user ? user.fullNames : "Loading..."}
+            {user ? user.name : "Loading..."}
           </Text>
           <Text style={styles.userHandle}>
             {user ? user.email : "Loading..."}
@@ -98,7 +79,7 @@ const ProfileScreen = ({ navigation }) => {
                 <Text
                   style={{ color: "#1B5E20", fontWeight: "bold", fontSize: 28 }}
                 >
-                  {user ? user.points : "Loading..."}
+                  {user ? user.ecoPoints : "Loading..."}
                 </Text>
               </View>
             </View>
