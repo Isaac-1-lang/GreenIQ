@@ -2,7 +2,7 @@
 export const dummyUsers = [
   {
     _id: '1',
-    name: 'John Doe',
+    name: 'Alice Murenzi',
     email: 'john@example.com',
     ecoPoints: 1250,
     userRole: 'citizen',
@@ -36,7 +36,7 @@ export const dummyLeaderboard = {
   leaderBoard: [
     { rank: 1, name: 'Jane Smith', ecoPoints: 2100, profileImage: 'https://via.placeholder.com/150' },
     { rank: 2, name: 'Mike Johnson', ecoPoints: 1800, profileImage: 'https://via.placeholder.com/150' },
-    { rank: 3, name: 'John Doe', ecoPoints: 1250, profileImage: 'https://via.placeholder.com/150' },
+    { rank: 3, name: 'Alice Murenzi', ecoPoints: 1250, profileImage: 'https://via.placeholder.com/150' },
     { rank: 4, name: 'Sarah Williams', ecoPoints: 950, profileImage: 'https://via.placeholder.com/150' },
     { rank: 5, name: 'Tom Brown', ecoPoints: 850, profileImage: 'https://via.placeholder.com/150' }
   ]
@@ -185,7 +185,7 @@ export const dummyAchievements = [
 
 export const dummyUserProfile = {
   _id: '1',
-  name: 'John Doe',
+  name: 'Alice Murenzi',
   email: 'john@example.com',
   phone: '+1-555-0123',
   ecoPoints: 1250,

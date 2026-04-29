@@ -18,7 +18,7 @@ const EmployeeManagement = ({ navigation }) => {
   const [employees, setEmployees] = useState([
     {
       id: 1,
-      name: 'John Doe',
+      name: 'Alice Murenzi',
       email: 'john.doe@company.com',
       role: 'Manager',
       itemsRecycled: 45,

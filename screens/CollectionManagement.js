@@ -24,7 +24,7 @@ const CollectionManagement = ({ navigation }) => {
       wasteType: 'Plastic & Paper',
       quantity: '45 kg',
       status: 'Completed',
-      employee: 'John Doe'
+      employee: 'Alice Murenzi'
     },
     {
       id: 2,
@@ -34,7 +34,7 @@ const CollectionManagement = ({ navigation }) => {
       wasteType: 'Electronics',
       quantity: '12 kg',
       status: 'Completed',
-      employee: 'Jane Smith'
+      employee: 'Jean Dieu'
     },
     {
       id: 3,
