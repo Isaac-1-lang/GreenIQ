@@ -29,7 +29,7 @@ import Community from './screens/Community';
 import Rewards from './screens/Rewards';
 import ReferralScreen from './screens/ReferralScreen';
 import SafeZoneAlerts from './screens/SafeZoneAlerts';
-import SafeZonesMap from './screens/SafeZonesMap';
+import PublicBinsMap from './screens/PublicBinsMap';
 import ScanChoiceScreen from './screens/ScanChoiceScreen';
 import ProductScanScreen from './screens/ProductScanScreen';
 import ClassificationResultScreen from './screens/ClassificationResultScreen';
@@ -195,8 +195,8 @@ function AppTabs() {
       })}
     >
       <Tab.Screen name="HomeTab" component={HomeScreen} options={{ tabBarLabel: 'Home' }} />
-      <Tab.Screen name="Map" component={SafeZonesMap} options={{ tabBarLabel: 'Safe Zones', tabBarIcon: ({ color, size, focused }) => (
-        <Ionicons name={focused ? 'shield' : 'shield-outline'} size={size} color={color} />
+      <Tab.Screen name="Map" component={PublicBinsMap} options={{ tabBarLabel: 'Public Bins', tabBarIcon: ({ color, size, focused }) => (
+        <Ionicons name={focused ? 'trash-bin' : 'trash-bin-outline'} size={size} color={color} />
       ) }} />
       <Tab.Screen
         name="Scan"
@@ -292,7 +292,7 @@ function App() {
           <Stack.Screen name="Rewards" component={Rewards} />
           <Stack.Screen name="Referral" component={ReferralScreen} />
           <Stack.Screen name="SafeZoneAlerts" component={SafeZoneAlerts} />
-          <Stack.Screen name="SafeZonesMap" component={SafeZonesMap} />
+          <Stack.Screen name="PublicBinsMap" component={PublicBinsMap} />
           <Stack.Screen name="ScanChoice" component={ScanChoiceScreen} />
           <Stack.Screen name="Scan" component={ScanScreen} />
           <Stack.Screen name="ProductScan" component={ProductScanScreen} />

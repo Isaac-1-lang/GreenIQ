@@ -127,9 +127,9 @@ const CollectionPoints = () => {
           <Text style={styles.headerTitle}>Green Points</Text>
         </View>
 
-        <TouchableOpacity onPress={() => navigation.navigate('SafeZonesMap')} style={styles.headerNavRight}>
-          <Ionicons name="shield-checkmark" size={20} color={COLORS.warning} />
-          <Text style={styles.headerNavTextRight}>Safe Zones</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('PublicBinsMap')} style={styles.headerNavRight}>
+          <Ionicons name="trash-bin" size={20} color={COLORS.warning} />
+          <Text style={styles.headerNavTextRight}>Public Bins</Text>
         </TouchableOpacity>
       </View>
 

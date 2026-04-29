@@ -133,7 +133,7 @@ const CompanyPortal = ({ navigation }) => {
               { icon: 'trash-bin', label: 'Collections', nav: 'CollectionMgmt', bg: '#D1FAE5', color: COLORS.primaryDark },
               { icon: 'people', label: 'Drivers', nav: 'Employees', bg: '#DBEAFE', color: '#2563EB' },
               { icon: 'pie-chart', label: 'Analytics', nav: 'Analytics', bg: '#FEF3C7', color: '#D97706' },
-              { icon: 'map', label: 'Zone Map', nav: 'SafeZonesMap', bg: '#FCE7F3', color: '#BE185D' }
+              { icon: 'map', label: 'Bin Map', nav: 'PublicBinsMap', bg: '#FCE7F3', color: '#BE185D' }
             ].map((action, idx) => (
                <TouchableOpacity 
                   key={idx} 
