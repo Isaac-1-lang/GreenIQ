@@ -341,7 +341,7 @@ const HomeScreen = ({ navigation }) => {
                   toggleQuickActions();
                   action.action();
                 }}
-              >
+              >m
                 <View style={styles.fabMenuIcon}>
                   <Ionicons name={action.icon} size={20} color={COLORS.surface} />
                 </View>
