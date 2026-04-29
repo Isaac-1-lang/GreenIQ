@@ -2,6 +2,7 @@ import React, { useContext, useState, useEffect, useMemo, useRef } from 'react';
 import {
   View,
   Text,
+  Platform,
   StyleSheet,
   SafeAreaView,
   FlatList,
@@ -20,20 +21,22 @@ import { Ionicons } from '@expo/vector-icons';
 import { LineChart, PieChart } from 'react-native-chart-kit';
 import { useWindowDimensions } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
+import { LinearGradient } from 'expo-linear-gradient';
+import { COLORS, SIZES, SHADOWS } from '../utils/theme';
 
 const { width: screenWidth } = Dimensions.get('window');
 
 const mockStats = {
-  collectionPointsCount: 0,
-  itemsRecycled: 0,
-  activeUsers: 0,
-  monthlyGrowth: 0,
-  co2Saved: 0, 
-  pointsDistributed: 0,
+  collectionPointsCount: 12,
+  itemsRecycled: 4250,
+  activeUsers: 856,
+  monthlyGrowth: 15,
+  co2Saved: 12.5, 
+  pointsDistributed: 15400,
   topRecyclers: [
-    { id: 1, name: 'EcoWarrior John', points: 0, items: 0 },
-    { id: 2, name: 'Green Sarah', points: 0, items: 0 },
-    { id: 3, name: 'RecyclePro Mike', points: 0, items: 0 },
+    { id: 1, name: 'EcoWarrior John', points: 450, items: 120 },
+    { id: 2, name: 'Green Sarah', points: 380, items: 95 },
+    { id: 3, name: 'RecyclePro Mike', points: 320, items: 80 },
   ],
   recentActivities: [
     { id: 1, action: 'New collection point added', location: 'Gasabo District', time: '2 hours ago', type: 'success' },
@@ -53,16 +56,16 @@ const mockStats = {
     labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
     datasets: [{
       data: [235, 287, 356, 298, 445, 398, 234],
-      color: (opacity = 1) => `rgba(45, 106, 79, ${opacity})`,
+      color: (opacity = 1) => `rgba(15, 118, 110, ${opacity})`, // Using primary color
       strokeWidth: 3,
     }],
   },
   materialTypes: [
-    { name: 'Plastic', population: 35, color: '#FF6B6B', legendFontColor: '#333', legendFontSize: 12 },
-    { name: 'Glass', population: 25, color: '#4ECDC4', legendFontColor: '#333', legendFontSize: 12 },
-    { name: 'Paper', population: 20, color: '#45B7D1', legendFontColor: '#333', legendFontSize: 12 },
-    { name: 'Metal', population: 15, color: '#96CEB4', legendFontColor: '#333', legendFontSize: 12 },
-    { name: 'Other', population: 5, color: '#FFEAA7', legendFontColor: '#333', legendFontSize: 12 },
+    { name: 'Plastic', population: 35, color: '#0EA5E9', legendFontColor: '#333', legendFontSize: 12 },
+    { name: 'Glass', population: 25, color: '#10B981', legendFontColor: '#333', legendFontSize: 12 },
+    { name: 'Paper', population: 20, color: '#8B5CF6', legendFontColor: '#333', legendFontSize: 12 },
+    { name: 'Metal', population: 15, color: '#F59E0B', legendFontColor: '#333', legendFontSize: 12 },
+    { name: 'Other', population: 5, color: '#94A3B8', legendFontColor: '#333', legendFontSize: 12 },
   ],
 };
 
@@ -81,6 +84,7 @@ const Dashboard = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedPoint, setSelectedPoint] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  
   const filteredPoints = useMemo(() => {
     return mockStats.collectionPointsList.filter(point =>
       point.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -92,22 +96,19 @@ const Dashboard = () => {
   const isTablet = window.width >= 900;
   const isLandscape = window.width > window.height;
 
-  const email = user?.email || '';
+  const email = user?.email || 'admin@rca.com'; // Fallback for mockup viewing
 
   const onRefresh = React.useCallback(() => {
     setRefreshing(true);
-    // Simulate API call
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 2000);
+    setTimeout(() => setRefreshing(false), 2000);
   }, []);
 
-  // Animation for main dashboard card
   const mainAnim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    Animated.timing(mainAnim, {
+    Animated.spring(mainAnim, {
       toValue: 1,
-      duration: 800,
+      friction: 8,
+      tension: 40,
       useNativeDriver: true,
     }).start();
   }, []);
@@ -123,9 +124,9 @@ const Dashboard = () => {
   if (!email.endsWith('@rca.com')) {
     return (
       <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="light-content" backgroundColor="#d9534f" />
+        <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
         <View style={styles.deniedContainer}>
-          <Ionicons name="shield-checkmark-outline" size={80} color="#d9534f" />
+          <Ionicons name="shield-checkmark-outline" size={80} color={COLORS.error} />
           <Text style={styles.deniedText}>Access Restricted</Text>
           <Text style={styles.deniedSub}>
             This government dashboard requires authorized RCA credentials.
@@ -145,63 +146,64 @@ const Dashboard = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Operational': return '#2d6a4f';
-      case 'Full': return '#e67e22';
-      case 'Maintenance': return '#f39c12';
-      default: return '#d9534f';
+      case 'Operational': return COLORS.success;
+      case 'Full': return COLORS.error;
+      case 'Maintenance': return COLORS.warning;
+      default: return COLORS.textMuted;
     }
   };
 
   const getCapacityColor = (capacity) => {
-    if (capacity >= 90) return '#e74c3c';
-    if (capacity >= 70) return '#f39c12';
-    return '#27ae60';
+    if (capacity >= 90) return COLORS.error;
+    if (capacity >= 70) return COLORS.warning;
+    return COLORS.success;
   };
 
-  // Responsive grid for metrics
   const renderMetricsGrid = () => {
     const metrics = [
       {
         icon: 'location',
         value: mockStats.collectionPointsCount,
-        label: 'Collection Points',
-        cardStyle: styles.primaryCard,
+        label: 'Points',
+        color: COLORS.primary,
+        bgColor: '#CCFBF1',
       },
       {
         icon: 'leaf',
         value: mockStats.itemsRecycled.toLocaleString(),
-        label: 'Items Recycled',
-        cardStyle: styles.successCard,
+        label: 'Items',
+        color: COLORS.accent,
+        bgColor: '#D1FAE5',
       },
       {
         icon: 'people',
         value: mockStats.activeUsers.toLocaleString(),
-        label: 'Active Users',
-        cardStyle: styles.infoCard,
+        label: 'Users',
+        color: COLORS.secondary,
+        bgColor: '#DBEAFE',
       },
       {
         icon: 'trending-up',
         value: `+${mockStats.monthlyGrowth}%`,
-        label: 'Monthly Growth',
-        cardStyle: styles.warningCard,
+        label: 'Growth',
+        color: COLORS.warning,
+        bgColor: '#FEF3C7',
       },
     ];
-    const columns = isTablet ? 4 : 2;
-    const rows = [];
-    for (let i = 0; i < metrics.length; i += columns) {
-      rows.push(metrics.slice(i, i + columns));
-    }
-    return rows.map((row, rowIndex) => (
-      <View key={rowIndex} style={[styles.metricsRow, isTablet && styles.metricsRowTablet]}>
-        {row.map((metric, idx) => (
-          <View key={metric.label} style={[styles.metricCard, metric.cardStyle, isTablet && styles.metricCardTablet]}>
-            <Ionicons name={metric.icon} size={isTablet ? 38 : 28} color="#fff" style={{ marginBottom: 6 }} />
+    
+    return (
+      <View style={styles.metricsGrid}>
+        {metrics.map((metric, idx) => (
+          <View key={metric.label} style={[styles.metricCard, isTablet && styles.metricCardTablet]}>
+            <View style={[styles.metricIconBox, { backgroundColor: metric.bgColor }]}>
+              <Ionicons name={metric.icon} size={isTablet ? 28 : 24} color={metric.color} />
+            </View>
             <Text style={[styles.metricValue, isTablet && styles.metricValueTablet]}>{metric.value}</Text>
             <Text style={[styles.metricLabel, isTablet && styles.metricLabelTablet]}>{metric.label}</Text>
           </View>
         ))}
       </View>
-    ));
+    );
   };
 
   const renderTabContent = () => {
@@ -212,34 +214,53 @@ const Dashboard = () => {
             opacity: mainAnim,
             transform: [{ translateY: mainAnim.interpolate({ inputRange: [0, 1], outputRange: [40, 0] }) }],
           }}>
-            {/* Welcoming Header */}
             <View style={styles.dashboardHeader}>
-              <Text style={styles.dashboardTitle}>Welcome to Your Dashboard!</Text>
-              <Text style={styles.dashboardSubtitle}>Track your impact, manage collection points, and see your community grow.</Text>
+              <Text style={styles.dashboardTitle}>Welcome back, Admin 👋</Text>
+              <Text style={styles.dashboardSubtitle}>Here's what's happening with the recycling centers today.</Text>
             </View>
+
             {/* Quick Actions */}
             <View style={styles.quickActionsRow}>
-              <TouchableOpacity style={styles.quickActionButton} onPress={() => Alert.alert('Scan Item', 'Go to Scan screen!')}>
-                <Ionicons name="scan" size={28} color="#fff" />
-                <Text style={styles.quickActionText}>Scan Item</Text>
+              <TouchableOpacity style={styles.quickActionButton} onPress={() => Alert.alert('Add Point', 'Add new!')}>
+                <View style={[styles.quickActionIconBg, { backgroundColor: '#E0F2FE' }]}>
+                  <Ionicons name="add-circle" size={24} color={COLORS.secondary} />
+                </View>
+                <Text style={styles.quickActionText}>New Point</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.quickActionButton} onPress={() => Alert.alert('Find Drop-off', 'Go to Map!')}>
-                <Ionicons name="map" size={28} color="#fff" />
-                <Text style={styles.quickActionText}>Find Drop-off</Text>
+              <TouchableOpacity style={styles.quickActionButton} onPress={() => Alert.alert('Report', 'Generate!')}>
+                <View style={[styles.quickActionIconBg, { backgroundColor: '#F3E8FF' }]}>
+                  <Ionicons name="document-text" size={24} color="#9333EA" />
+                </View>
+                <Text style={styles.quickActionText}>Reports</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.quickActionButton} onPress={() => Alert.alert('Invite Friends', 'Share the app!')}>
-                <Ionicons name="person-add" size={28} color="#fff" />
-                <Text style={styles.quickActionText}>Invite Friends</Text>
+              <TouchableOpacity style={styles.quickActionButton} onPress={() => Alert.alert('Broadcast', 'Send SMS!')}>
+                <View style={[styles.quickActionIconBg, { backgroundColor: '#FFEDD5' }]}>
+                  <Ionicons name="megaphone" size={24} color="#EA580C" />
+                </View>
+                <Text style={styles.quickActionText}>Alerts</Text>
               </TouchableOpacity>
             </View>
+
             {/* Eco Tip */}
-            <View style={styles.ecoTipCard}>
-              <Ionicons name="leaf" size={22} color="#43e97b" style={{ marginRight: 8 }} />
-              <Text style={styles.ecoTipText}>{ecoTips[ecoTipIndex]}</Text>
-            </View>
+            <LinearGradient colors={['#F0FDF4', '#DCFCE7']} style={styles.ecoTipCard}>
+              <Ionicons name="bulb" size={24} color={COLORS.accent} style={{ marginRight: 12 }} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.ecoTipTitle}>System Tip</Text>
+                <Text style={styles.ecoTipText}>{ecoTips[ecoTipIndex]}</Text>
+              </View>
+            </LinearGradient>
+
+            {/* Key Metrics Grid */}
+            {renderMetricsGrid()}
+
             {/* Safe Zones Map Preview */}
-            <View style={[styles.sectionCard, isTablet && styles.sectionCardTablet, { padding: 0, overflow: 'hidden', marginBottom: 28 }]}> 
-              <Text style={[styles.sectionTitle, isTablet && styles.sectionTitleTablet, { padding: 16 }]}>Safe Zones Map</Text>
+            <View style={[styles.sectionCard, isTablet && styles.sectionCardTablet, { padding: 0, overflow: 'hidden' }]}> 
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Live Operations Map</Text>
+                <TouchableOpacity onPress={() => setSelectedTab('points')}>
+                  <Text style={styles.sectionAction}>View All</Text>
+                </TouchableOpacity>
+              </View>
               <MapView
                 style={styles.mapPreview}
                 initialRegion={{
@@ -254,86 +275,37 @@ const Dashboard = () => {
                   <Marker
                     key={point.id}
                     coordinate={{ latitude: point.coordinates.lat, longitude: point.coordinates.lng }}
-                    title={point.name}
-                    description={point.location}
+                    pinColor={point.status === 'Operational' ? COLORS.success : COLORS.error}
                   />
                 ))}
               </MapView>
-              <TouchableOpacity style={styles.mapButton} onPress={() => Alert.alert('Open Map', 'Go to full map!')}>
-                <Text style={styles.mapButtonText}>Open Full Map</Text>
-              </TouchableOpacity>
             </View>
-            {/* Material Breakdown Pie Chart */}
-            <View style={[styles.sectionCard, isTablet && styles.sectionCardTablet]}> 
-              <Text style={[styles.sectionTitle, isTablet && styles.sectionTitleTablet]}>Material Breakdown</Text>
-              <PieChart
-                data={mockStats.materialTypes}
-                width={isTablet ? 400 : screenWidth - 60}
-                height={isTablet ? 220 : 160}
-                chartConfig={{
-                  color: (opacity = 1) => `rgba(45, 106, 79, ${opacity})`,
-                  labelColor: (opacity = 1) => `rgba(0,0,0,${opacity})`,
-                }}
-                accessor="population"
-                backgroundColor="transparent"
-                paddingLeft={isTablet ? '20' : '10'}
-                absolute
-                style={{ alignSelf: 'center' }}
-              />
-            </View>
-            {/* Leaderboard */}
-            <View style={[styles.sectionCard, isTablet && styles.sectionCardTablet]}> 
-              <Text style={[styles.sectionTitle, isTablet && styles.sectionTitleTablet]}>Top Recyclers</Text>
-              {mockStats.topRecyclers.map((user, idx) => (
-                <View key={user.id} style={styles.leaderboardRow}>
-                  <Ionicons name="trophy" size={22} color={idx === 0 ? '#ffd700' : idx === 1 ? '#c0c0c0' : '#cd7f32'} style={{ marginRight: 8 }} />
-                  <Text style={styles.leaderboardName}>{user.name}</Text>
-                  <Text style={styles.leaderboardPoints}>{user.points} pts</Text>
-                  <Text style={styles.leaderboardItems}>{user.items} items</Text>
-                </View>
-              ))}
-            </View>
-            {/* Key Metrics (Responsive Grid) */}
-            <View style={[styles.metricsContainer, isTablet && styles.metricsContainerTablet]}>
-              {renderMetricsGrid()}
-            </View>
-            {/* Environmental Impact */}
-            <View style={[styles.sectionCard, isTablet && styles.sectionCardTablet]}>
-              <Text style={[styles.sectionTitle, isTablet && styles.sectionTitleTablet]}>Environmental Impact</Text>
-              <View style={styles.impactRow}>
-                <View style={styles.impactItem}>
-                  <Ionicons name="cloud" size={isTablet ? 32 : 24} color="#27ae60" />
-                  <Text style={[styles.impactValue, isTablet && styles.impactValueTablet]}>{mockStats.co2Saved} tons</Text>
-                  <Text style={[styles.impactLabel, isTablet && styles.impactLabelTablet]}>CO₂ Saved</Text>
-                </View>
-                <View style={styles.impactItem}>
-                  <Ionicons name="star" size={isTablet ? 32 : 24} color="#f39c12" />
-                  <Text style={[styles.impactValue, isTablet && styles.impactValueTablet]}>{mockStats.pointsDistributed.toLocaleString()}</Text>
-                  <Text style={[styles.impactLabel, isTablet && styles.impactLabelTablet]}>Points Distributed</Text>
-                </View>
-              </View>
-            </View>
+
             {/* Weekly Collection Chart */}
             <View style={[styles.sectionCard, isTablet && styles.sectionCardTablet]}>
-              <Text style={[styles.sectionTitle, isTablet && styles.sectionTitleTablet]}>Weekly Collection Trends</Text>
+              <Text style={styles.sectionTitle}>Weekly Collection Trends</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <LineChart
                   data={mockStats.weeklyData}
-                  width={(isTablet ? 700 : screenWidth - 60)}
-                  height={isTablet ? 280 : 200}
+                  width={(isTablet ? 700 : screenWidth - 64)} // Adjust for padding
+                  height={isTablet ? 280 : 220}
                   chartConfig={{
-                    backgroundColor: '#fff',
-                    backgroundGradientFrom: '#fff',
-                    backgroundGradientTo: '#fff',
+                    backgroundColor: COLORS.surface,
+                    backgroundGradientFrom: COLORS.surface,
+                    backgroundGradientTo: COLORS.surface,
                     decimalPlaces: 0,
-                    color: (opacity = 1) => `rgba(45, 106, 79, ${opacity})`,
-                    labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                    color: (opacity = 1) => `rgba(15, 118, 110, ${opacity})`,
+                    labelColor: (opacity = 1) => COLORS.textSecondary,
                     style: { borderRadius: 16 },
                     propsForDots: {
                       r: isTablet ? '6' : '4',
-                      strokeWidth: isTablet ? '3' : '2',
-                      stroke: '#2d6a4f',
+                      strokeWidth: '2',
+                      stroke: COLORS.primaryDark,
                     },
+                    propsForBackgroundLines: {
+                      stroke: '#E2E8F0',
+                      strokeDasharray: '4',
+                    }
                   }}
                   bezier
                   style={styles.chart}
@@ -345,39 +317,42 @@ const Dashboard = () => {
 
       case 'points':
         return (
-          <View>
-            {/* Search Bar */}
+          <Animated.View style={{ opacity: mainAnim }}>
             <View style={styles.searchContainer}>
-              <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
+              <Ionicons name="search" size={20} color={COLORS.textMuted} style={styles.searchIcon} />
               <TextInput
                 style={styles.searchInput}
                 placeholder="Search collection points..."
                 value={searchQuery}
                 onChangeText={setSearchQuery}
-                placeholderTextColor="#999"
+                placeholderTextColor={COLORS.textMuted}
               />
             </View>
 
-            {/* Collection Points List */}
             <FlatList
               data={filteredPoints}
               keyExtractor={item => item.id.toString()}
+              scrollEnabled={false}
               renderItem={({ item }) => (
-                <TouchableOpacity style={styles.pointCard} onPress={() => handlePointPress(item)}>
+                <TouchableOpacity style={styles.pointCard} onPress={() => handlePointPress(item)} activeOpacity={0.7}>
                   <View style={styles.pointHeader}>
                     <View style={styles.pointInfo}>
                       <Text style={styles.pointName}>{item.name}</Text>
-                      <Text style={styles.pointLocation}>{item.location}</Text>
+                      <Text style={styles.pointLocation}>
+                        <Ionicons name="location" size={12} color={COLORS.textMuted} /> {item.location}
+                      </Text>
                     </View>
-                    <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-                      <Text style={styles.statusText}>{item.status}</Text>
+                    <View style={[styles.statusBadge, { backgroundColor: `${getStatusColor(item.status)}20` }]}>
+                      <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>{item.status}</Text>
                     </View>
                   </View>
                   
                   <View style={styles.pointMetrics}>
                     <View style={styles.pointMetric}>
-                      <Text style={styles.metricNumber}>{item.capacity}%</Text>
-                      <Text style={styles.metricText}>Capacity</Text>
+                      <View style={{flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4}}>
+                        <Text style={styles.metricText}>Capacity</Text>
+                        <Text style={styles.metricNumberSmall}>{item.capacity}%</Text>
+                      </View>
                       <View style={styles.capacityBar}>
                         <View style={[styles.capacityFill, { 
                           width: `${item.capacity}%`, 
@@ -385,27 +360,26 @@ const Dashboard = () => {
                         }]} />
                       </View>
                     </View>
-                    <View style={styles.pointMetric}>
-                      <Text style={styles.metricNumber}>{item.dailyCollection}</Text>
-                      <Text style={styles.metricText}>Daily Items</Text>
+                    <View style={[styles.pointMetric, { marginLeft: SIZES.l, flex: 0.5 }]}>
+                      <Text style={styles.metricText}>Daily Avg</Text>
+                      <Text style={[styles.metricNumberSmall, { marginTop: 2 }]}>{item.dailyCollection} <Text style={{fontSize:10, color: COLORS.textMuted}}>items</Text></Text>
                     </View>
                   </View>
                 </TouchableOpacity>
               )}
-              showsVerticalScrollIndicator={false}
             />
-          </View>
+          </Animated.View>
         );
 
       case 'analytics':
         return (
-          <View>
+          <Animated.View style={{ opacity: mainAnim }}>
             {/* Material Distribution */}
             <View style={styles.sectionCard}>
               <Text style={styles.sectionTitle}>Material Distribution</Text>
               <PieChart
                 data={mockStats.materialTypes}
-                width={screenWidth - 60}
+                width={screenWidth - 64}
                 height={220}
                 chartConfig={{
                   color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
@@ -415,6 +389,27 @@ const Dashboard = () => {
                 paddingLeft="15"
                 absolute
               />
+            </View>
+
+            {/* Environmental Impact */}
+            <View style={[styles.sectionCard, isTablet && styles.sectionCardTablet]}>
+              <Text style={styles.sectionTitle}>Environmental Impact</Text>
+              <View style={styles.impactRow}>
+                <View style={styles.impactItem}>
+                  <View style={[styles.impactIconBg, {backgroundColor: '#ECFDF5'}]}>
+                    <Ionicons name="cloud" size={28} color={COLORS.accent} />
+                  </View>
+                  <Text style={styles.impactValue}>{mockStats.co2Saved}t</Text>
+                  <Text style={styles.impactLabel}>CO₂ Saved</Text>
+                </View>
+                <View style={styles.impactItem}>
+                  <View style={[styles.impactIconBg, {backgroundColor: '#FEFCE8'}]}>
+                    <Ionicons name="star" size={28} color={COLORS.warning} />
+                  </View>
+                  <Text style={styles.impactValue}>{mockStats.pointsDistributed >= 1000 ? `${(mockStats.pointsDistributed/1000).toFixed(1)}k` : mockStats.pointsDistributed}</Text>
+                  <Text style={styles.impactLabel}>Points Dist.</Text>
+                </View>
+              </View>
             </View>
 
             {/* Top Recyclers */}
@@ -428,14 +423,14 @@ const Dashboard = () => {
                   <View style={styles.recyclerInfo}>
                     <Text style={styles.recyclerName}>{recycler.name}</Text>
                     <Text style={styles.recyclerStats}>
-                      {recycler.points.toLocaleString()} points • {recycler.items} items
+                      <Ionicons name="leaf" size={12} color={COLORS.accent} /> {recycler.points} points
                     </Text>
                   </View>
-                  <Ionicons name="trophy" size={20} color={index === 0 ? '#f1c40f' : index === 1 ? '#95a5a6' : '#cd7f32'} />
+                  <Ionicons name="trophy" size={24} color={index === 0 ? '#FBBF24' : index === 1 ? '#94A3B8' : '#B45309'} />
                 </View>
               ))}
             </View>
-          </View>
+          </Animated.View>
         );
 
       default:
@@ -443,68 +438,55 @@ const Dashboard = () => {
     }
   };
 
-  const getActivityColor = (type) => {
-    switch (type) {
-      case 'success': return '#27ae60';
-      case 'warning': return '#f39c12';
-      case 'error': return '#e74c3c';
-      default: return '#3498db';
-    }
-  };
-
-  const getActivityIcon = (type) => {
-    switch (type) {
-      case 'success': return 'checkmark-circle';
-      case 'warning': return 'warning';
-      case 'error': return 'alert-circle';
-      default: return 'information-circle';
-    }
-  };
-
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1b4332" />
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.primaryDark} />
       
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>Government Dashboard</Text>
-          <Text style={styles.headerSubtitle}>Rwanda Recycling Management</Text>
-        </View>
-        <TouchableOpacity style={styles.notificationButton}>
-          <Ionicons name="notifications-outline" size={24} color="#fff" />
-          <View style={styles.notificationBadge}>
-            <Text style={styles.notificationCount}>3</Text>
+        <View style={styles.headerTop}>
+          <View>
+            <Text style={styles.headerSubtitle}>Government Dashboard</Text>
+            <Text style={styles.headerTitle}>GreenIQ Admin</Text>
           </View>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity style={styles.notificationButton}>
+            <View style={styles.notificationIconBg}>
+              <Ionicons name="notifications-outline" size={24} color={COLORS.primaryDark} />
+            </View>
+            <View style={styles.notificationBadge}>
+              <Text style={styles.notificationCount}>3</Text>
+            </View>
+          </TouchableOpacity>
+        </View>
 
-      {/* Tab Navigation */}
-      <View style={styles.tabContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          {[ 
-            { key: 'overview', label: 'Overview', icon: 'analytics' },
-            { key: 'points', label: 'Collection Points', icon: 'location' },
-            { key: 'analytics', label: 'Analytics', icon: 'pie-chart' },
-          ].map((tab) => (
-            <TouchableOpacity
-              key={tab.key}
-              style={[styles.tab, selectedTab === tab.key && styles.activeTab]}
-              onPress={() => setSelectedTab(tab.key)}
-            >
-              <Ionicons name={tab.icon} size={20} color={selectedTab === tab.key ? '#2d6a4f' : '#666'} />
-              <Text style={[styles.tabText, selectedTab === tab.key && styles.activeTabText]}>
-                {tab.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+        {/* Tab Navigation */}
+        <View style={styles.tabContainer}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {[ 
+              { key: 'overview', label: 'Overview', icon: 'analytics' },
+              { key: 'points', label: 'Facilities', icon: 'location' },
+              { key: 'analytics', label: 'Analytics', icon: 'pie-chart' },
+            ].map((tab) => (
+              <TouchableOpacity
+                key={tab.key}
+                style={[styles.tab, selectedTab === tab.key && styles.activeTab]}
+                onPress={() => setSelectedTab(tab.key)}
+              >
+                <Ionicons name={tab.icon} size={20} color={selectedTab === tab.key ? COLORS.surface : 'rgba(255,255,255,0.6)'} />
+                <Text style={[styles.tabText, selectedTab === tab.key && styles.activeTabText]}>
+                  {tab.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
       </View>
 
       {/* Content */}
       <ScrollView
         style={styles.content}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+        contentContainerStyle={{ paddingBottom: SIZES.xxxl }}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={COLORS.primary} />}
         showsVerticalScrollIndicator={false}
       >
         {renderTabContent()}
@@ -523,16 +505,16 @@ const Dashboard = () => {
               <>
                 <View style={styles.modalHeader}>
                   <Text style={styles.modalTitle}>{selectedPoint.name}</Text>
-                  <TouchableOpacity onPress={() => setModalVisible(false)}>
-                    <Ionicons name="close" size={24} color="#666" />
+                  <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeModalBtn}>
+                    <Ionicons name="close" size={24} color={COLORS.textMuted} />
                   </TouchableOpacity>
                 </View>
                 
                 <View style={styles.modalBody}>
                   <View style={styles.modalRow}>
                     <Text style={styles.modalLabel}>Status:</Text>
-                    <View style={[styles.statusBadge, { backgroundColor: getStatusColor(selectedPoint.status) }]}>
-                      <Text style={styles.statusText}>{selectedPoint.status}</Text>
+                    <View style={[styles.statusBadge, { backgroundColor: `${getStatusColor(selectedPoint.status)}20` }]}>
+                      <Text style={[styles.statusText, {color: getStatusColor(selectedPoint.status)}]}>{selectedPoint.status}</Text>
                     </View>
                   </View>
                   
@@ -543,17 +525,16 @@ const Dashboard = () => {
                   
                   <View style={styles.modalRow}>
                     <Text style={styles.modalLabel}>Capacity:</Text>
-                    <Text style={styles.modalValue}>{selectedPoint.capacity}%</Text>
+                    <Text style={[styles.modalValue, {color: getCapacityColor(selectedPoint.capacity)}]}>{selectedPoint.capacity}%</Text>
                   </View>
                   
                   <View style={styles.modalRow}>
-                    <Text style={styles.modalLabel}>Daily Collection:</Text>
+                    <Text style={styles.modalLabel}>Daily Average:</Text>
                     <Text style={styles.modalValue}>{selectedPoint.dailyCollection} items</Text>
                   </View>
                   
                   <TouchableOpacity style={styles.actionButton}>
-                    <Ionicons name="settings" size={20} color="#fff" />
-                    <Text style={styles.actionButtonText}>Manage Point</Text>
+                    <Text style={styles.actionButtonText}>Manage Facility</Text>
                   </TouchableOpacity>
                 </View>
               </>
@@ -561,513 +542,467 @@ const Dashboard = () => {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: COLORS.background,
   },
   header: {
-    backgroundColor: '#1b4332',
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+    backgroundColor: COLORS.primaryDark,
+    paddingTop: Platform.OS === 'ios' ? 50 : 20,
+    borderBottomLeftRadius: SIZES.radiusXl,
+    borderBottomRightRadius: SIZES.radiusXl,
+    ...SHADOWS.medium,
+    zIndex: 10,
+  },
+  headerTop: {
+    paddingHorizontal: SIZES.l,
+    paddingVertical: SIZES.m,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontSize: SIZES.h2,
+    fontWeight: '800',
+    color: COLORS.surface,
   },
   headerSubtitle: {
-    fontSize: 14,
-    color: '#a8d5ba',
-    marginTop: 2,
+    fontSize: SIZES.body2,
+    color: COLORS.primaryLight,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   notificationButton: {
     position: 'relative',
   },
-  notificationBadge: {
-    position: 'absolute',
-    top: -5,
-    right: -5,
-    backgroundColor: '#e74c3c',
-    borderRadius: 10,
-    width: 20,
-    height: 20,
+  notificationIconBg: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: COLORS.surface,
     justifyContent: 'center',
     alignItems: 'center',
   },
+  notificationBadge: {
+    position: 'absolute',
+    top: -2,
+    right: -2,
+    backgroundColor: COLORS.error,
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+    borderWidth: 2,
+    borderColor: COLORS.primaryDark,
+  },
   notificationCount: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: 'bold',
   },
   tabContainer: {
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
+    paddingHorizontal: SIZES.s,
+    marginBottom: SIZES.m,
   },
   tab: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    marginRight: 10,
+    paddingHorizontal: SIZES.m,
+    paddingVertical: SIZES.s,
+    marginHorizontal: SIZES.xs,
+    borderRadius: SIZES.radiusPill,
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
   activeTab: {
-    borderBottomWidth: 3,
-    borderBottomColor: '#2d6a4f',
+    backgroundColor: 'rgba(255,255,255,0.25)',
   },
   tabText: {
-    marginLeft: 8,
-    fontSize: 14,
-    color: '#666',
-    fontWeight: '500',
+    marginLeft: SIZES.xs,
+    fontSize: SIZES.body2,
+    color: 'rgba(255,255,255,0.6)',
+    fontWeight: '600',
   },
   activeTabText: {
-    color: '#2d6a4f',
-    fontWeight: 'bold',
+    color: COLORS.surface,
+    fontWeight: '700',
   },
   content: {
     flex: 1,
-    padding: 20,
+    padding: SIZES.m,
   },
-  metricsContainer: {
-    marginBottom: 24,
-    alignSelf: 'center',
-    width: '100%',
-    maxWidth: 900,
+  dashboardHeader: {
+    marginBottom: SIZES.l,
+    paddingHorizontal: SIZES.xs,
   },
-  metricsContainerTablet: {
-    marginBottom: 36,
-    maxWidth: 900,
+  dashboardTitle: {
+    color: COLORS.text,
+    fontSize: SIZES.h2,
+    fontWeight: '800',
+    marginBottom: 4,
   },
-  metricsRow: {
+  dashboardSubtitle: {
+    color: COLORS.textSecondary,
+    fontSize: SIZES.body2,
+  },
+  quickActionsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 18,
+    marginBottom: SIZES.l,
+    gap: SIZES.s,
   },
-  metricsRowTablet: {
-    marginBottom: 28,
+  quickActionButton: {
+    flex: 1,
+    backgroundColor: COLORS.surface,
+    borderRadius: SIZES.radiusLg,
+    padding: SIZES.m,
+    alignItems: 'center',
+    ...SHADOWS.small,
+  },
+  quickActionIconBg: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: SIZES.s,
+  },
+  quickActionText: {
+    color: COLORS.text,
+    fontWeight: '600',
+    fontSize: SIZES.caption,
+  },
+  metricsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: SIZES.l,
   },
   metricCard: {
-    flex: 1,
-    backgroundColor: '#2d6a4f',
-    borderRadius: 18,
-    marginHorizontal: 6,
-    paddingVertical: 18,
-    paddingHorizontal: 10,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
+    width: '48%',
+    backgroundColor: COLORS.surface,
+    borderRadius: SIZES.radiusXl,
+    padding: SIZES.m,
+    marginBottom: SIZES.m,
+    ...SHADOWS.small,
   },
   metricCardTablet: {
-    borderRadius: 28,
-    paddingVertical: 32,
-    marginHorizontal: 14,
+    width: '23%',
+  },
+  metricIconBox: {
+    width: 40,
+    height: 40,
+    borderRadius: SIZES.radiusMd,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: SIZES.s,
   },
   metricValue: {
-    color: '#fff',
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginTop: 2,
-  },
-  metricValueTablet: {
-    fontSize: 32,
+    color: COLORS.text,
+    fontSize: SIZES.h2,
+    fontWeight: '800',
   },
   metricLabel: {
-    color: '#e0e0e0',
-    fontSize: 14,
-    marginTop: 2,
-  },
-  metricLabelTablet: {
-    fontSize: 18,
+    color: COLORS.textSecondary,
+    fontSize: SIZES.body2,
+    fontWeight: '500',
   },
   sectionCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    backgroundColor: COLORS.surface,
+    borderRadius: SIZES.radiusXl,
+    padding: SIZES.l,
+    marginBottom: SIZES.l,
+    ...SHADOWS.small,
   },
-  sectionCardTablet: {
-    borderRadius: 24,
-    padding: 30,
-    marginBottom: 30,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.15,
-    shadowRadius: 5,
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: SIZES.l,
+    paddingBottom: SIZES.m,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1b4332',
-    marginBottom: 15,
+    fontSize: SIZES.h4,
+    fontWeight: '700',
+    color: COLORS.text,
   },
-  sectionTitleTablet: {
-    fontSize: 24,
-    marginBottom: 20,
-  },
-  impactRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  impactItem: {
-    alignItems: 'center',
-  },
-  impactValue: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1b4332',
-    marginTop: 8,
-  },
-  impactValueTablet: {
-    fontSize: 28,
-  },
-  impactLabel: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 4,
-  },
-  impactLabelTablet: {
-    fontSize: 16,
-  },
-  chart: {
-    marginVertical: 8,
-    borderRadius: 16,
+  sectionAction: {
+    color: COLORS.primary,
+    fontWeight: '600',
+    fontSize: SIZES.body2,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    marginBottom: 20,
-    paddingHorizontal: 15,
-    elevation: 2,
-  },
-  searchIcon: {
-    marginRight: 10,
+    backgroundColor: COLORS.surface,
+    borderRadius: SIZES.radiusLg,
+    marginBottom: SIZES.l,
+    paddingHorizontal: SIZES.m,
+    height: 56,
+    ...SHADOWS.small,
   },
   searchInput: {
     flex: 1,
-    paddingVertical: 15,
-    fontSize: 16,
-    color: '#333',
+    fontSize: SIZES.body1,
+    color: COLORS.text,
+    marginLeft: SIZES.s,
   },
   pointCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 15,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    backgroundColor: COLORS.surface,
+    borderRadius: SIZES.radiusXl,
+    padding: SIZES.l,
+    marginBottom: SIZES.m,
+    ...SHADOWS.small,
   },
   pointHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 15,
+    marginBottom: SIZES.m,
   },
   pointInfo: {
     flex: 1,
   },
   pointName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1b4332',
+    fontSize: SIZES.h4,
+    fontWeight: '700',
+    color: COLORS.text,
   },
   pointLocation: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: SIZES.body2,
+    color: COLORS.textSecondary,
     marginTop: 4,
+    fontWeight: '500',
   },
   statusBadge: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 20,
+    borderRadius: SIZES.radiusPill,
   },
   statusText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
+    fontSize: SIZES.caption,
+    fontWeight: '700',
   },
   pointMetrics: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   pointMetric: {
     flex: 1,
   },
-  metricNumber: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1b4332',
+  metricNumberSmall: {
+    fontSize: SIZES.body1,
+    fontWeight: '700',
+    color: COLORS.text,
   },
   metricText: {
-    fontSize: 12,
-    color: '#666',
-    marginTop: 2,
+    fontSize: SIZES.caption,
+    color: COLORS.textSecondary,
+    fontWeight: '600',
+    textTransform: 'uppercase',
   },
   capacityBar: {
-    height: 4,
-    backgroundColor: '#e9ecef',
-    borderRadius: 2,
-    marginTop: 8,
+    height: 6,
+    backgroundColor: '#F1F5F9',
+    borderRadius: 3,
     overflow: 'hidden',
   },
   capacityFill: {
     height: '100%',
-    borderRadius: 2,
+    borderRadius: 3,
+  },
+  mapPreview: {
+    width: '100%',
+    height: 200,
+  },
+  ecoTipCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: SIZES.radiusXl,
+    padding: SIZES.m,
+    marginBottom: SIZES.l,
+    borderWidth: 1,
+    borderColor: '#bbf7d0',
+  },
+  ecoTipTitle: {
+    color: COLORS.primaryDark,
+    fontSize: SIZES.caption,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    marginBottom: 2,
+  },
+  ecoTipText: {
+    color: COLORS.primaryDark,
+    fontSize: SIZES.body2,
+    fontWeight: '500',
+  },
+  chart: {
+    marginVertical: SIZES.s,
+    borderRadius: SIZES.radiusLg,
+  },
+  impactRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: SIZES.s,
+  },
+  impactItem: {
+    alignItems: 'center',
+  },
+  impactIconBg: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: SIZES.s,
+  },
+  impactValue: {
+    fontSize: SIZES.h2,
+    fontWeight: '800',
+    color: COLORS.text,
+  },
+  impactLabel: {
+    fontSize: SIZES.body2,
+    color: COLORS.textSecondary,
+    fontWeight: '500',
   },
   recyclerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: SIZES.m,
     borderBottomWidth: 1,
-    borderBottomColor: '#f1f3f4',
+    borderBottomColor: '#F1F5F9',
   },
   recyclerRank: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: '#e9ecef',
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#F8FAFC',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 15,
+    marginRight: SIZES.m,
   },
   rankNumber: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#666',
+    fontSize: SIZES.body2,
+    fontWeight: '700',
+    color: COLORS.textSecondary,
   },
   recyclerInfo: {
     flex: 1,
   },
   recyclerName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
+    fontSize: SIZES.body1,
+    fontWeight: '700',
+    color: COLORS.text,
   },
   recyclerStats: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: SIZES.body2,
+    color: COLORS.accent,
+    fontWeight: '600',
     marginTop: 2,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
+    justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 20,
-    width: '100%',
-    maxHeight: '80%',
+    backgroundColor: COLORS.surface,
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    minHeight: '60%',
+    padding: SIZES.l,
+    ...SHADOWS.large,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
+    marginBottom: SIZES.l,
   },
   modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1b4332',
+    fontSize: SIZES.h3,
+    fontWeight: '800',
+    color: COLORS.text,
   },
-  modalBody: {
-    padding: 20,
+  closeModalBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#F1F5F9',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   modalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
+    paddingVertical: SIZES.m,
     borderBottomWidth: 1,
-    borderBottomColor: '#f1f3f4',
+    borderBottomColor: '#F1F5F9',
   },
   modalLabel: {
-    fontSize: 16,
-    color: '#666',
+    fontSize: SIZES.body1,
+    color: COLORS.textSecondary,
     fontWeight: '500',
   },
   modalValue: {
-    fontSize: 16,
-    color: '#333',
-    fontWeight: '600',
+    fontSize: SIZES.body1,
+    color: COLORS.text,
+    fontWeight: '700',
   },
-  dashboardHeader: {
+  actionButton: {
+    backgroundColor: COLORS.primary,
+    borderRadius: SIZES.radiusPill,
+    paddingVertical: SIZES.m,
     alignItems: 'center',
-    marginBottom: 24,
-    marginTop: 10,
-    paddingHorizontal: 10,
+    marginTop: SIZES.xl,
+    ...SHADOWS.medium,
   },
-  dashboardTitle: {
-    color: '#222',
-    fontSize: 30,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 6,
-    letterSpacing: 1.2,
-  },
-  dashboardSubtitle: {
-    color: '#11998e',
-    fontSize: 18,
-    textAlign: 'center',
-    marginBottom: 2,
-    fontWeight: '500',
-    lineHeight: 24,
+  actionButtonText: {
+    color: COLORS.surface,
+    fontSize: SIZES.h4,
+    fontWeight: '700',
   },
   deniedContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: SIZES.xl,
   },
   deniedText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#d9534f',
-    marginTop: 10,
+    fontSize: SIZES.h2,
+    fontWeight: '800',
+    color: COLORS.error,
+    marginTop: SIZES.m,
   },
   deniedSub: {
-    fontSize: 16,
-    color: '#777',
+    fontSize: SIZES.body1,
+    color: COLORS.textSecondary,
     textAlign: 'center',
-    marginTop: 5,
-    marginBottom: 20,
+    marginTop: SIZES.s,
+    marginBottom: SIZES.xl,
   },
   contactButton: {
-    backgroundColor: '#2d6a4f',
-    paddingVertical: 12,
-    paddingHorizontal: 25,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#2d6a4f',
+    backgroundColor: COLORS.surface,
+    paddingVertical: SIZES.m,
+    paddingHorizontal: SIZES.xl,
+    borderRadius: SIZES.radiusPill,
+    borderWidth: 2,
+    borderColor: COLORS.error,
   },
   contactButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  quickActionsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 18,
-    marginTop: 8,
-    gap: 10,
-  },
-  quickActionButton: {
-    flex: 1,
-    backgroundColor: '#11998e',
-    borderRadius: 16,
-    alignItems: 'center',
-    paddingVertical: 14,
-    marginHorizontal: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  quickActionText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 14,
-    marginTop: 4,
-  },
-  ecoTipCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#e0f7fa',
-    borderRadius: 14,
-    padding: 12,
-    marginBottom: 18,
-    marginHorizontal: 2,
-    shadowColor: '#43e97b',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  ecoTipText: {
-    color: '#11998e',
-    fontSize: 15,
-    fontWeight: '500',
-    flex: 1,
-  },
-  mapPreview: {
-    width: '100%',
-    height: 180,
-    minHeight: 120,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-  },
-  mapButton: {
-    backgroundColor: '#43e97b',
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderBottomLeftRadius: 24,
-    borderBottomRightRadius: 24,
-  },
-  mapButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-    letterSpacing: 1,
-  },
-  leaderboardRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-    backgroundColor: '#f8fafc',
-    borderRadius: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.04,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  leaderboardName: {
-    flex: 1,
-    fontWeight: 'bold',
-    color: '#222',
-    fontSize: 15,
-  },
-  leaderboardPoints: {
-    color: '#11998e',
-    fontWeight: 'bold',
-    marginLeft: 8,
-    fontSize: 14,
-  },
-  leaderboardItems: {
-    color: '#888',
-    marginLeft: 8,
-    fontSize: 13,
+    color: COLORS.error,
+    fontSize: SIZES.body1,
+    fontWeight: '700',
   },
 });
 
-export default Dashboard; 
+export default Dashboard;

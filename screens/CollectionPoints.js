@@ -1,82 +1,71 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Dimensions, ScrollView, Alert, Modal, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Modal, Linking, StatusBar } from 'react-native';
 import MapView, { Marker, Callout, PROVIDER_GOOGLE } from 'react-native-maps';
 import { SearchBar } from 'react-native-elements';
 import { useNavigation } from '@react-navigation/native';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
+import { COLORS, SIZES, SHADOWS } from '../utils/theme';
 
+const kigaliBase = { lat: -1.9441, lng: 30.0619 };
+// Dispersed locations around Kigali to prevent overlapping
 export const wastePoints = [
-  { id: 1, name: 'Mapo Resource Recovery Facility', district: 'Mapo-gu', sector: 'Seoul', coords: { latitude: 37.5665, longitude: 126.9780 }, types: ['Recyclable wastes', 'Plastic', 'Paper', 'Metal', 'Glass'], hours: 'Mon-Sat: 7:00 AM - 6:00 PM', contact: '+82 2 1234 5678', capacity: 'High', status: 'Operational', description: 'Major resource recovery facility in Seoul for comprehensive waste processing.', manager: 'Kim Min-seok' },
-  { id: 2, name: 'Future Sangdam-dong Incineration Plant', district: 'Gangdong-gu', sector: 'Seoul', coords: { latitude: 37.5492, longitude: 127.1465 }, types: ['Non biodegradable', 'Hazardous', 'Organic'], hours: 'Mon-Fri: 8:00 AM - 5:00 PM', contact: '+82 2 2345 6789', capacity: 'High', status: 'Operational', description: 'Advanced incineration facility for non-recyclable waste processing.', manager: 'Park Ji-hyun' },
-  { id: 3, name: 'Nowon Facility', district: 'Nowon-gu', sector: 'Seoul', coords: { latitude: 37.6542, longitude: 127.0568 }, types: ['Organic', 'Plastic', 'Paper', 'Electronic'], hours: 'Tue-Sun: 9:00 AM - 4:00 PM', contact: '+82 2 3456 7890', capacity: 'Medium', status: 'Operational', description: 'Multi-purpose waste processing facility serving northern Seoul.', manager: 'Lee Seung-ho' },
-  { id: 4, name: 'Gangnam Recycling Center', district: 'Gangnam-gu', sector: 'Seoul', coords: { latitude: 37.5172, longitude: 127.0473 }, types: ['Paper', 'Glass', 'Electronic', 'Textile'], hours: 'Mon-Fri: 8:00 AM - 5:00 PM', contact: '+82 2 4567 8901', capacity: 'Medium', status: 'Operational', description: 'Premium recycling center for high-value materials.', manager: 'Choi Yoon-jung' },
-  { id: 5, name: 'Seongbuk Waste Station', district: 'Seongbuk-gu', sector: 'Seoul', coords: { latitude: 37.5894, longitude: 127.0167 }, types: ['Organic', 'Metal'], hours: 'Mon-Fri: 8:00 AM - 3:00 PM', contact: '+82 2 5678 9012', capacity: 'Low', status: 'Operational', description: 'Local waste station for organic and metal processing.', manager: 'Jung Min-kyu' },
-  { id: 6, name: 'Dongdaemun Collection Point', district: 'Dongdaemun-gu', sector: 'Seoul', coords: { latitude: 37.5744, longitude: 127.0095 }, types: ['Plastic', 'Glass', 'Textile'], hours: 'Tue-Sun: 9:00 AM - 4:00 PM', contact: '+82 2 6789 0123', capacity: 'Low', status: 'Limited', description: 'Collection point near Dongdaemun market for commercial waste.', manager: 'Han Soo-jin' },
-  { id: 7, name: 'Yongsan Recycling Hub', district: 'Yongsan-gu', sector: 'Seoul', coords: { latitude: 37.5320, longitude: 126.9904 }, types: ['Paper', 'Textile', 'Electronic'], hours: 'Mon-Sat: 7:30 AM - 5:30 PM', contact: '+82 2 7890 1234', capacity: 'Medium', status: 'Operational', description: 'Eco-friendly center for paper, textile, and e-waste recycling.', manager: 'Kang Dong-wook' },
-  { id: 8, name: 'Jongno Waste Depot', district: 'Jongno-gu', sector: 'Seoul', coords: { latitude: 37.5736, longitude: 126.9784 }, types: ['Organic', 'Metal'], hours: 'Mon-Fri: 8:00 AM - 3:00 PM', contact: '+82 2 8901 2345', capacity: 'Low', status: 'Operational', description: 'Historic district waste depot for organic and metal waste.', manager: 'Yoon Ji-eun' },
-  { id: 9, name: 'Eunpyeong Collection', district: 'Eunpyeong-gu', sector: 'Seoul', coords: { latitude: 37.6186, longitude: 126.9270 }, types: ['Organic', 'Plastic'], hours: 'Mon-Sat: 7:00 AM - 5:00 PM', contact: '+82 2 9012 3456', capacity: 'Medium', status: 'Operational', description: 'Western Seoul collection point for organic and plastic waste.', manager: 'Kim Tae-ho' },
-  { id: 10, name: 'Gangseo Waste Point', district: 'Gangseo-gu', sector: 'Seoul', coords: { latitude: 37.5519, longitude: 126.8495 }, types: ['Paper', 'Glass'], hours: 'Tue-Sun: 8:00 AM - 4:00 PM', contact: '+82 2 0123 4567', capacity: 'Low', status: 'Operational', description: 'Western Seoul recycling point for paper and glass waste.', manager: 'Park Min-ji' },
-  { id: 11, name: 'Yangcheon Recycling', district: 'Yangcheon-gu', sector: 'Seoul', coords: { latitude: 37.5270, longitude: 126.8562 }, types: ['Organic', 'Textile'], hours: 'Mon-Fri: 8:00 AM - 5:00 PM', contact: '+82 2 1234 5678', capacity: 'Medium', status: 'Operational', description: 'Textile and organic waste recycling center.', manager: 'Lee Ji-hye' },
-  { id: 12, name: 'Guro Waste Station', district: 'Guro-gu', sector: 'Seoul', coords: { latitude: 37.4954, longitude: 126.8874 }, types: ['Plastic', 'Metal'], hours: 'Mon-Sat: 7:00 AM - 4:00 PM', contact: '+82 2 2345 6789', capacity: 'Low', status: 'Operational', description: 'Industrial district station for plastic and metal waste.', manager: 'Choi Seung-min' },
-  { id: 13, name: 'Geumcheon Collection', district: 'Geumcheon-gu', sector: 'Seoul', coords: { latitude: 37.4519, longitude: 126.9020 }, types: ['Organic', 'Paper'], hours: 'Mon-Fri: 8:00 AM - 5:00 PM', contact: '+82 2 3456 7890', capacity: 'Medium', status: 'Operational', description: 'Collection point for organic and paper waste.', manager: 'Jung Hye-ri' },
-  { id: 14, name: 'Yeongdeungpo Waste Point', district: 'Yeongdeungpo-gu', sector: 'Seoul', coords: { latitude: 37.5264, longitude: 126.8962 }, types: ['Plastic', 'Electronic'], hours: 'Tue-Sun: 9:00 AM - 4:00 PM', contact: '+82 2 4567 8901', capacity: 'Low', status: 'Operational', description: 'E-waste and plastic collection in Yeongdeungpo.', manager: 'Han Min-seok' },
-  { id: 15, name: 'Gwangjin Recycling', district: 'Gwangjin-gu', sector: 'Seoul', coords: { latitude: 37.5384, longitude: 127.0822 }, types: ['Organic', 'Textile'], hours: 'Mon-Sat: 7:30 AM - 5:00 PM', contact: '+82 2 5678 9012', capacity: 'Medium', status: 'Operational', description: 'Eastern Seoul center for organic and textile waste.', manager: 'Kang Soo-jin' },
-  { id: 16, name: 'Seongdong Waste Depot', district: 'Seongdong-gu', sector: 'Seoul', coords: { latitude: 37.5506, longitude: 127.0409 }, types: ['Metal', 'Paper'], hours: 'Mon-Fri: 8:00 AM - 3:00 PM', contact: '+82 2 6789 0123', capacity: 'Low', status: 'Operational', description: 'Depot for metal and paper recycling.', manager: 'Yoon Dong-hyun' },
-  { id: 17, name: 'Dongjak Collection', district: 'Dongjak-gu', sector: 'Seoul', coords: { latitude: 37.5124, longitude: 126.9393 }, types: ['Organic', 'Plastic'], hours: 'Mon-Sat: 7:00 AM - 5:00 PM', contact: '+82 2 7890 1234', capacity: 'Medium', status: 'Operational', description: 'Southern Seoul collection point for organic and plastic waste.', manager: 'Kim Ji-yoon' },
-  { id: 18, name: 'Gwanak Waste Point', district: 'Gwanak-gu', sector: 'Seoul', coords: { latitude: 37.4784, longitude: 126.9516 }, types: ['Glass', 'Paper'], hours: 'Tue-Sun: 8:00 AM - 4:00 PM', contact: '+82 2 8901 2345', capacity: 'Low', status: 'Operational', description: 'Southern point for glass and paper waste.', manager: 'Park Ji-hye' },
-  { id: 19, name: 'Seocho Recycling', district: 'Seocho-gu', sector: 'Seoul', coords: { latitude: 37.4837, longitude: 127.0324 }, types: ['Organic', 'Textile'], hours: 'Mon-Fri: 8:00 AM - 5:00 PM', contact: '+82 2 9012 3456', capacity: 'Medium', status: 'Operational', description: 'Recycling center for organic and textile waste.', manager: 'Lee Min-kyu' },
-  { id: 20, name: 'Songpa Waste Station', district: 'Songpa-gu', sector: 'Seoul', coords: { latitude: 37.5145, longitude: 127.1059 }, types: ['Plastic', 'Metal'], hours: 'Mon-Sat: 7:00 AM - 4:00 PM', contact: '+82 2 0123 4567', capacity: 'Medium', status: 'Operational', description: 'Station for plastic and metal waste in eastern Seoul.', manager: 'Choi Ji-eun' },
-  { id: 21, name: 'Gangdong Collection', district: 'Gangdong-gu', sector: 'Seoul', coords: { latitude: 37.5301, longitude: 127.1238 }, types: ['Organic', 'Paper'], hours: 'Mon-Fri: 8:00 AM - 5:00 PM', contact: '+82 2 1234 5678', capacity: 'Low', status: 'Operational', description: 'Collection point for organic and paper waste.', manager: 'Jung Seung-ho' },
-  { id: 22, name: 'Jungnang Waste Point', district: 'Jungnang-gu', sector: 'Seoul', coords: { latitude: 37.6066, longitude: 127.0926 }, types: ['Plastic', 'Electronic'], hours: 'Tue-Sun: 9:00 AM - 4:00 PM', contact: '+82 2 2345 6789', capacity: 'Low', status: 'Operational', description: 'E-waste and plastic collection in northeastern Seoul.', manager: 'Han Tae-ho' },
-  { id: 23, name: 'Dobong Recycling', district: 'Dobong-gu', sector: 'Seoul', coords: { latitude: 37.6688, longitude: 127.0471 }, types: ['Organic', 'Textile'], hours: 'Mon-Sat: 7:30 AM - 5:00 PM', contact: '+82 2 3456 7890', capacity: 'Medium', status: 'Operational', description: 'Northern Seoul center for organic and textile waste.', manager: 'Kang Min-ji' },
-  { id: 24, name: 'No-won Waste Depot', district: 'No-won-gu', sector: 'Seoul', coords: { latitude: 37.6542, longitude: 127.0568 }, types: ['Metal', 'Paper'], hours: 'Mon-Fri: 8:00 AM - 3:00 PM', contact: '+82 2 4567 8901', capacity: 'Low', status: 'Operational', description: 'Depot for metal and paper recycling.', manager: 'Yoon Ji-hye' },
-  { id: 25, name: 'Uijeongbu Collection', district: 'Uijeongbu', sector: 'Gyeonggi', coords: { latitude: 37.7485, longitude: 127.0389 }, types: ['Organic', 'Plastic'], hours: 'Mon-Sat: 7:00 AM - 5:00 PM', contact: '+82 31 5678 9012', capacity: 'Medium', status: 'Operational', description: 'Collection point for organic and plastic waste in Gyeonggi province.', manager: 'Kim Dong-wook' },
-  { id: 26, name: 'Suwon Waste Point', district: 'Suwon', sector: 'Gyeonggi', coords: { latitude: 37.2636, longitude: 127.0286 }, types: ['Glass', 'Paper'], hours: 'Tue-Sun: 8:00 AM - 4:00 PM', contact: '+82 31 6789 0123', capacity: 'Low', status: 'Operational', description: 'Collection point for glass and paper waste in Suwon.', manager: 'Park Min-kyu' },
-  { id: 27, name: 'Incheon Recycling', district: 'Incheon', sector: 'Incheon', coords: { latitude: 37.4563, longitude: 126.7052 }, types: ['Organic', 'Textile'], hours: 'Mon-Fri: 8:00 AM - 5:00 PM', contact: '+82 32 7890 1234', capacity: 'Medium', status: 'Operational', description: 'Recycling center for organic and textile waste in Incheon.', manager: 'Lee Ji-eun' },
-  { id: 28, name: 'Bundang Waste Station', district: 'Bundang', sector: 'Gyeonggi', coords: { latitude: 37.3594, longitude: 127.1086 }, types: ['Plastic', 'Metal'], hours: 'Mon-Sat: 7:00 AM - 4:00 PM', contact: '+82 31 8901 2345', capacity: 'Medium', status: 'Operational', description: 'Station for plastic and metal waste in Bundang.', manager: 'Choi Seung-min' },
-  { id: 29, name: 'Yongin Collection', district: 'Yongin', sector: 'Gyeonggi', coords: { latitude: 37.2411, longitude: 127.1776 }, types: ['Organic', 'Paper'], hours: 'Mon-Fri: 8:00 AM - 5:00 PM', contact: '+82 31 9012 3456', capacity: 'Medium', status: 'Operational', description: 'Collection point for organic and paper waste in Yongin.', manager: 'Jung Hye-ri' },
-  { id: 30, name: 'Bucheon Waste Depot', district: 'Bucheon', sector: 'Gyeonggi', coords: { latitude: 37.5035, longitude: 126.7660 }, types: ['Metal', 'Plastic'], hours: 'Mon-Sat: 7:00 AM - 4:00 PM', contact: '+82 32 0123 4567', capacity: 'Low', status: 'Operational', description: 'Depot for metal and plastic waste in Bucheon.', manager: 'Han Min-seok' },
+  { id: 1, name: 'Nyarugenge Central Point', district: 'Nyarugenge', sector: 'Nyarugenge', coords: { latitude: -1.9441, longitude: 30.0619 }, types: ['Recyclable wastes', 'Plastic', 'Electronic'], hours: 'Mon-Sat: 7:00 AM - 6:00 PM', contact: '+250 788 123 456', capacity: 'High', status: 'Operational', description: 'Major resource recovery in central Kigali.', manager: 'Jean Paul' },
+  { id: 2, name: 'Nyamirambo Station', district: 'Nyarugenge', sector: 'Nyamirambo', coords: { latitude: -1.9706, longitude: 30.0588 }, types: ['Non biodegradable', 'Hazardous', 'Organic'], hours: 'Mon-Fri: 8:00 AM - 5:00 PM', contact: '+250 788 234 567', capacity: 'High', status: 'Operational', description: 'Waste processing facility for southern urban sectors.', manager: 'Marie Claire' },
+  { id: 3, name: 'Kimironko Market Hub', district: 'Gasabo', sector: 'Kimironko', coords: { latitude: -1.9355, longitude: 30.1123 }, types: ['Organic', 'Plastic', 'Paper'], hours: 'Tue-Sun: 9:00 AM - 4:00 PM', contact: '+250 788 345 678', capacity: 'Medium', status: 'Operational', description: 'Serving the market district.', manager: 'Eric Nizeyimana' },
+  { id: 4, name: 'Remera Point', district: 'Gasabo', sector: 'Remera', coords: { latitude: -1.9578, longitude: 30.1066 }, types: ['Paper', 'Glass', 'Textile'], hours: 'Mon-Fri: 8:00 AM - 5:00 PM', contact: '+250 788 456 789', capacity: 'Medium', status: 'Operational', description: 'Premium recycling near the stadium complex.', manager: 'Aline Uwineza' },
+  { id: 5, name: 'Gikondo Industrial', district: 'Kicukiro', sector: 'Gikondo', coords: { latitude: -1.9884, longitude: 30.0644 }, types: ['Metal', 'Electronic'], hours: 'Mon-Fri: 8:00 AM - 3:00 PM', contact: '+250 788 567 890', capacity: 'Low', status: 'Operational', description: 'Handling large-scale scrap and electronics.', manager: 'David Muhire' },
+  { id: 6, name: 'Kacyiru Office Hub', district: 'Gasabo', sector: 'Kacyiru', coords: { latitude: -1.9300, longitude: 30.0900 }, types: ['Paper', 'Plastic'], hours: 'Mon-Fri: 7:30 AM - 5:30 PM', contact: '+250 788 678 901', capacity: 'Low', status: 'Limited', description: 'Corporate recycling zone.', manager: 'Grace Mutoni' },
+  { id: 7, name: 'Gisozi Depot', district: 'Gasabo', sector: 'Gisozi', coords: { latitude: -1.9213, longitude: 30.0768 }, types: ['Wood', 'Metal', 'Construction'], hours: 'Mon-Sat: 7:30 AM - 5:30 PM', contact: '+250 788 789 012', capacity: 'Medium', status: 'Operational', description: 'Near Gisozi woodworking area.', manager: 'Samuel Kamari' },
+  { id: 8, name: 'Nyabugogo Terminal Hub', district: 'Nyarugenge', sector: 'Nyabugogo', coords: { latitude: -1.9355, longitude: 30.0488 }, types: ['Organic', 'Plastic'], hours: 'Mon-Sun: 6:00 AM - 8:00 PM', contact: '+250 788 890 123', capacity: 'High', status: 'Operational', description: 'Terminal-side heavy traffic collection.', manager: 'Olivier Ndushabandi' },
+  { id: 9, name: 'Niboye Station', district: 'Kicukiro', sector: 'Niboye', coords: { latitude: -1.9800, longitude: 30.1100 }, types: ['Organic', 'Plastic'], hours: 'Mon-Sat: 7:00 AM - 5:00 PM', contact: '+250 788 901 234', capacity: 'Medium', status: 'Operational', description: 'Suburban waste sorting.', manager: 'Divine Uwera' },
+  { id: 10, name: 'Kagugu Point', district: 'Gasabo', sector: 'Kagugu', coords: { latitude: -1.9100, longitude: 30.0800 }, types: ['Paper', 'Glass'], hours: 'Tue-Sun: 8:00 AM - 4:00 PM', contact: '+250 788 012 345', capacity: 'Low', status: 'Operational', description: 'Residential drop-off point.', manager: 'Moses Mugisha' },
+  // Adding coordinates slightly offset from main sectors for dispersion
+  { id: 11, name: 'Kabeza Hub', district: 'Kicukiro', sector: 'Kabeza', coords: { latitude: -1.9600, longitude: 30.1300 }, types: ['Electronic', 'Textile'], hours: 'Mon-Fri: 8:00 AM - 5:00 PM', contact: '+250 788 111 222', capacity: 'Medium', status: 'Operational', description: 'E-waste target area.', manager: 'Sarah Niyonsaba' },
+  { id: 12, name: 'Kanombe Station', district: 'Kicukiro', sector: 'Kanombe', coords: { latitude: -1.9650, longitude: 30.1500 }, types: ['Plastic', 'Metal'], hours: 'Mon-Sat: 7:00 AM - 4:00 PM', contact: '+250 788 222 333', capacity: 'Low', status: 'Operational', description: 'Airport vicinity collection.', manager: 'Faustin Habimana' },
+  { id: 13, name: 'Masaka Depot', district: 'Kicukiro', sector: 'Masaka', coords: { latitude: -1.9800, longitude: 30.1800 }, types: ['Organic', 'Medical'], hours: 'Mon-Fri: 8:00 AM - 5:00 PM', contact: '+250 788 333 444', capacity: 'High', status: 'Operational', description: 'Specialized facility.', manager: 'Hope Kamanzi' },
+  { id: 14, name: 'Kabuga Point', district: 'Gasabo', sector: 'Kabuga', coords: { latitude: -1.9900, longitude: 30.2200 }, types: ['Plastic', 'Paper'], hours: 'Tue-Sun: 9:00 AM - 4:00 PM', contact: '+250 788 444 555', capacity: 'Medium', status: 'Operational', description: 'Edge of Kigali collection zone.', manager: 'Chris Rurangwa' },
+  { id: 15, name: 'Kimisagara Recycling', district: 'Nyarugenge', sector: 'Kimisagara', coords: { latitude: -1.9560, longitude: 30.0450 }, types: ['Organic', 'Textile'], hours: 'Mon-Sat: 7:30 AM - 5:00 PM', contact: '+250 788 555 666', capacity: 'Medium', status: 'Operational', description: 'Dense urban collection point.', manager: 'Angele Umutoni' },
+  { id: 16, name: 'Chic Building Zone', district: 'Nyarugenge', sector: 'Nyarugenge', coords: { latitude: -1.9420, longitude: 30.0650 }, types: ['Paper', 'Plastic'], hours: 'Mon-Fri: 8:00 AM - 3:00 PM', contact: '+250 788 666 777', capacity: 'High', status: 'Operational', description: 'Commercial center point.', manager: 'Vianney Gatete' },
+  { id: 17, name: 'Amahoro Stadium Point', district: 'Gasabo', sector: 'Remera', coords: { latitude: -1.9540, longitude: 30.1130 }, types: ['Plastic', 'Organic'], hours: 'Mon-Sat: 7:00 AM - 5:00 PM', contact: '+250 788 777 888', capacity: 'Medium', status: 'Operational', description: 'Events processing zone.', manager: 'Patience Bwiza' },
+  { id: 18, name: 'Kigali Heights Point', district: 'Gasabo', sector: 'Kimihurura', coords: { latitude: -1.9480, longitude: 30.0930 }, types: ['Glass', 'Paper'], hours: 'Tue-Sun: 8:00 AM - 4:00 PM', contact: '+250 788 888 999', capacity: 'Low', status: 'Operational', description: 'Office and restaurant waste.', manager: 'Didier Mugiraneza' },
+  { id: 19, name: 'Nyanza Sector Hub', district: 'Kicukiro', sector: 'Nyanza', coords: { latitude: -1.9950, longitude: 30.0850 }, types: ['Organic', 'Textile'], hours: 'Mon-Fri: 8:00 AM - 5:00 PM', contact: '+250 788 999 000', capacity: 'Medium', status: 'Operational', description: 'Outskirts depot.', manager: 'Clementine Nikuze' },
+  { id: 20, name: 'Kibagabaga Recycling', district: 'Gasabo', sector: 'Kibagabaga', coords: { latitude: -1.9310, longitude: 30.1210 }, types: ['Plastic', 'Electronic'], hours: 'Mon-Sat: 7:00 AM - 4:00 PM', contact: '+250 783 123 456', capacity: 'Medium', status: 'Operational', description: 'Residential tech sorting.', manager: 'Bertrand Rwigema' },
+  { id: 21, name: 'Nyarutarama Point', district: 'Gasabo', sector: 'Remera', coords: { latitude: -1.9350, longitude: 30.1010 }, types: ['Organic', 'Glass'], hours: 'Mon-Fri: 8:00 AM - 5:00 PM', contact: '+250 783 234 567', capacity: 'Low', status: 'Operational', description: 'Premium sorting site.', manager: 'Alice Kamanzi' }
 ];
 
-const RwandaMap = () => {
+const CollectionPoints = () => {
   const navigation = useNavigation();
   const mapRef = useRef(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
-  const [userLocation, setUserLocation] = useState(null);
   const [selectedPoint, setSelectedPoint] = useState(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [notifVisible, setNotifVisible] = useState(false);
+  
   const dummyNotifications = [
     { id: 1, text: 'Heavy rainfall expected in Gasabo. Safe zones open for shelter.' },
-    { id: 2, text: 'Flood risk near Nyarugenge Waste Hub. Use alternate safe zone.' },
-    { id: 3, text: 'Heatwave alert: Stay hydrated and visit safe zones for cooling.' },
+    { id: 2, text: 'Flood risk near Nyabugogo. Use alternate collection points.' },
+    { id: 3, text: 'Umuganda Alert: All collection points close early this Saturday.' },
   ];
 
-  const seoulCenter = { latitude: 37.5665, longitude: 126.9780 };
-  const seoulRegion = {
-    latitude: 37.5665,
-    longitude: 126.9780,
-    latitudeDelta: 0.3,
-    longitudeDelta: 0.3,
+  const rwandaRegion = {
+    latitude: -1.9441,
+    longitude: 30.0619,
+    latitudeDelta: 0.15,
+    longitudeDelta: 0.15,
   };
 
-  // Request location permissions
   useEffect(() => {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status === 'granted') {
         const location = await Location.getCurrentPositionAsync({});
-        setUserLocation({
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-        });
+        // Optional: pan to user location
       }
     })();
   }, []);
 
-  // Search functionality
   const handleSearch = (text) => {
     setSearchQuery(text);
     if (text.length > 0) {
@@ -115,162 +104,65 @@ const RwandaMap = () => {
     mapRef.current?.animateToRegion({
       latitude: point.coords.latitude,
       longitude: point.coords.longitude,
-      latitudeDelta: 0.05,
-      longitudeDelta: 0.05,
+      latitudeDelta: 0.02,
+      longitudeDelta: 0.02,
     });
     setSearchQuery('');
     setSearchResults([]);
+    setSelectedPoint(point);
   };
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor={COLORS.primaryDark} />
+      
       {/* Navigation Controls */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 44, paddingBottom: 10, backgroundColor: '#1B5E20', paddingHorizontal: 10 }}>
-        <TouchableOpacity onPress={() => navigation.navigate('Home')} style={{ padding: 6, flexDirection: 'row', alignItems: 'center' }}>
-          <Ionicons name="arrow-back" size={24} color="#fff" />
-          <Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold', marginLeft: 6 }}>Home</Text>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.navigate('Home')} style={styles.headerNav}>
+          <Ionicons name="arrow-back" size={24} color={COLORS.surface} />
+          <Text style={styles.headerNavText}>Home</Text>
         </TouchableOpacity>
-        <Text style={{ color: '#fff', fontSize: 22, fontWeight: 'bold', letterSpacing: 1 }}>Collection Points</Text>
-        <TouchableOpacity onPress={() => navigation.navigate('SafeZonesMap')} style={{ padding: 6, flexDirection: 'row', alignItems: 'center' }}>
-          <Ionicons name="shield-outline" size={22} color="#FFD700" />
-          <Text style={{ color: '#FFD700', fontSize: 15, fontWeight: 'bold', marginLeft: 4 }}>Safe Zones</Text>
+        
+        <View style={styles.titleContainer}>
+          <Text style={styles.headerTitle}>Green Points</Text>
+        </View>
+
+        <TouchableOpacity onPress={() => navigation.navigate('SafeZonesMap')} style={styles.headerNavRight}>
+          <Ionicons name="shield-checkmark" size={20} color={COLORS.warning} />
+          <Text style={styles.headerNavTextRight}>Safe Zones</Text>
         </TouchableOpacity>
       </View>
+
       {/* Floating Notification Panel */}
       {notifVisible && (
-        <View style={{ position: 'absolute', top: 80, right: 18, backgroundColor: '#fff', borderRadius: 14, elevation: 6, shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 8, width: 280, zIndex: 20, padding: 12 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-            <Ionicons name="notifications" size={20} color="#FF5722" style={{ marginRight: 6 }} />
-            <Text style={{ fontWeight: 'bold', color: '#1B5E20', fontSize: 15 }}>Notifications</Text>
+        <View style={styles.notificationPanel}>
+          <View style={styles.notifHeader}>
+            <Ionicons name="notifications" size={20} color={COLORS.accent} style={{ marginRight: 6 }} />
+            <Text style={styles.notifTitle}>Notifications</Text>
             <TouchableOpacity onPress={() => setNotifVisible(false)} style={{ marginLeft: 'auto', padding: 4 }}>
-              <Ionicons name="close" size={18} color="#888" />
+              <Ionicons name="close" size={18} color={COLORS.textMuted} />
             </TouchableOpacity>
           </View>
           {dummyNotifications.map(n => (
-            <View key={n.id} style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
-              <Ionicons name="alert-circle-outline" size={16} color="#FF5722" style={{ marginRight: 6 }} />
-              <Text style={{ color: '#333', fontSize: 13 }}>{n.text}</Text>
+            <View key={n.id} style={styles.notifRow}>
+              <Ionicons name="alert-circle-outline" size={16} color={COLORS.accent} style={{ marginRight: 6 }} />
+              <Text style={styles.notifText}>{n.text}</Text>
             </View>
           ))}
         </View>
       )}
-      <MapView
-        ref={mapRef}
-        provider={PROVIDER_GOOGLE}
-        style={{ flex: 1 }}
-        initialRegion={seoulRegion}
-        mapType="standard"
-        showsUserLocation={true}
-        showsMyLocationButton={true}
-      >
-        {wastePoints.map((point) => (
-          <Marker
-            key={point.id}
-            coordinate={point.coords}
-            title={point.name}
-            description={point.description}
-            onPress={() => handleMarkerClick(point)}
-          >
-            {/* Distinct Safe Zone Marker */}
-            <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-              <View style={{
-                width: 38, height: 38, borderRadius: 19, backgroundColor: '#e0f7fa', alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: '#00C896',
-              }}>
-                <Ionicons name="shield" size={22} color="#1B5E20" />
-              </View>
-            </View>
-            <Callout tooltip>
-              <View style={styles.calloutContainer}>
-                <Text style={styles.calloutTitle}>{point.name} <Text style={{ color: '#00C896', fontWeight: 'bold' }}>[Safe Zone]</Text></Text>
-                <Text style={styles.calloutDescription}>{point.description}</Text>
-                <Text style={styles.calloutText}>District: {point.district}</Text>
-                <Text style={styles.calloutText}>Sector: {point.sector}</Text>
-                <Text style={styles.calloutText}>Waste Types: {point.types.join(', ')}</Text>
-                <Text style={styles.calloutText}>Hours: {point.hours}</Text>
-                <Text style={styles.calloutText}>Contact: {point.contact}</Text>
-                <TouchableOpacity 
-                  style={[styles.joinChatButton, { backgroundColor: '#00C896', marginBottom: 6 }]}
-                  onPress={() => handleMarkerClick(point)}
-                >
-                  <Ionicons name="chatbubble-ellipses" size={20} color="#fff" />
-                  <Text style={styles.joinChatText}>Join Chat</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.joinChatButton, { backgroundColor: '#1B5E20' }]}
-                  onPress={() => {
-                    const url = `https://www.google.com/maps/dir/?api=1&destination=${point.coords.latitude},${point.coords.longitude}`;
-                    Linking.openURL(url);
-                  }}
-                >
-                  <Ionicons name="navigate" size={20} color="#fff" />
-                  <Text style={styles.joinChatText}>Get Directions</Text>
-                </TouchableOpacity>
-              </View>
-            </Callout>
-          </Marker>
-        ))}
-      </MapView>
-      
-      {/* Confirmation Modal */}
-      <Modal
-        visible={showConfirmation}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={handleCancel}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Ionicons name="chatbubble-ellipses" size={32} color="#2d6a4f" />
-              <Text style={styles.modalTitle}>Join Chat Room</Text>
-            </View>
-            
-            {selectedPoint && (
-              <View style={styles.modalBody}>
-                <Text style={styles.modalText}>
-                  Would you like to join the chat room for {selectedPoint.name}?
-                </Text>
-                <Text style={styles.modalSubText}>
-                  You'll be able to chat with the collection point manager and other users.
-                </Text>
-                <View style={styles.modalInfo}>
-                  <Text style={styles.modalInfoText}>
-                    <Text style={styles.modalInfoLabel}>Manager: </Text>
-                    {selectedPoint.manager}
-                  </Text>
-                  <Text style={styles.modalInfoText}>
-                    <Text style={styles.modalInfoLabel}>Location: </Text>
-                    {selectedPoint.district}, {selectedPoint.sector}
-                  </Text>
-                </View>
-              </View>
-            )}
 
-            <View style={styles.modalFooter}>
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.cancelButton]} 
-                onPress={handleCancel}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.modalButton, styles.joinButton]} 
-                onPress={handleJoinChat}
-              >
-                <Text style={styles.joinButtonText}>Join Chat</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-      
+      {/* Search Container */}
       <View style={styles.searchContainer}>
         <SearchBar
-          placeholder="Search waste points..."
+          placeholder="Search by name, district, or waste type..."
           onChangeText={handleSearch}
           value={searchQuery}
           containerStyle={styles.searchBarContainer}
           inputContainerStyle={styles.searchBarInputContainer}
+          inputStyle={styles.searchBarInput}
+          searchIcon={{ color: COLORS.primaryDark }}
+          clearIcon={{ color: COLORS.textMuted }}
           round
           lightTheme
         />
@@ -283,44 +175,146 @@ const RwandaMap = () => {
                 style={styles.searchResultItem}
                 onPress={() => goToLocation(point)}
               >
-                <Text style={styles.searchResultTitle}>{point.name}</Text>
-                <Text style={styles.searchResultSubtitle}>{point.district}, {point.sector}</Text>
+                <View>
+                  <Text style={styles.searchResultTitle}>{point.name}</Text>
+                  <Text style={styles.searchResultSubtitle}>{point.district}, {point.sector}</Text>
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={COLORS.textMuted} />
               </TouchableOpacity>
             ))}
           </ScrollView>
         )}
       </View>
-      
-      {selectedPoint && (
-        <View style={styles.selectedPointContainer}>
-          <View style={styles.selectedPointContent}>
-            <View style={styles.selectedPointHeader}>
-              <Text style={styles.selectedPointTitle}>{selectedPoint.name}</Text>
-              <TouchableOpacity 
-                style={styles.joinChatButton}
-                onPress={() => setShowConfirmation(true)}
-              >
-                <Ionicons name="chatbubble-ellipses" size={20} color="#fff" />
-                <Text style={styles.joinChatText}>Join Chat</Text>
-              </TouchableOpacity>
+
+      <MapView
+        ref={mapRef}
+        provider={PROVIDER_GOOGLE}
+        style={styles.map}
+        initialRegion={rwandaRegion}
+        showsUserLocation={true}
+        showsMyLocationButton={false}
+      >
+        {wastePoints.map((point) => (
+          <Marker
+            key={point.id}
+            coordinate={point.coords}
+            onPress={() => setSelectedPoint(point)}
+          >
+            <View style={styles.markerContainer}>
+              <Ionicons name="leaf" size={20} color={COLORS.surface} />
             </View>
-            <View style={styles.selectedPointDetails}>
-              <Text style={styles.selectedPointText}>
-                <Text style={styles.selectedPointLabel}>Manager: </Text>
-                {selectedPoint.manager}
-              </Text>
-              <Text style={styles.selectedPointText}>
-                <Text style={styles.selectedPointLabel}>Location: </Text>
-                {selectedPoint.district}, {selectedPoint.sector}
-              </Text>
-              <Text style={styles.selectedPointText}>
-                <Text style={styles.selectedPointLabel}>Hours: </Text>
-                {selectedPoint.hours}
+          </Marker>
+        ))}
+      </MapView>
+      
+      {/* Selected Point Floating Card */}
+      {selectedPoint && (
+        <View style={styles.floatingCard}>
+          <TouchableOpacity 
+            style={styles.closeCardBtn} 
+            onPress={() => setSelectedPoint(null)}
+          >
+            <Ionicons name="close-circle" size={28} color={COLORS.textMuted} />
+          </TouchableOpacity>
+
+          <View style={styles.cardHeader}>
+            <View style={styles.iconBgResult}>
+              <Ionicons name="business" size={24} color={COLORS.primaryDark} />
+            </View>
+            <View style={{flex: 1}}>
+              <Text style={styles.cardTitle} numberOfLines={1}>{selectedPoint.name}</Text>
+              <Text style={styles.cardSubtitle}>
+                <Ionicons name="location" size={12} /> {selectedPoint.district}, {selectedPoint.sector}
               </Text>
             </View>
           </View>
+
+          <View style={styles.cardBadges}>
+            <View style={[styles.badge, { backgroundColor: '#ECFDF5' }]}>
+               <Text style={[styles.badgeText, { color: COLORS.success }]}>{selectedPoint.status}</Text>
+            </View>
+            <View style={[styles.badge, { backgroundColor: '#FEFCE8' }]}>
+               <Text style={[styles.badgeText, { color: COLORS.warning }]}>Cap: {selectedPoint.capacity}</Text>
+            </View>
+          </View>
+
+          <View style={styles.cardDetails}>
+            <View style={styles.detailRow}>
+              <Ionicons name="time-outline" size={16} color={COLORS.textSecondary} style={styles.detailIcon}/>
+              <Text style={styles.detailText}>{selectedPoint.hours}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Ionicons name="person-outline" size={16} color={COLORS.textSecondary} style={styles.detailIcon}/>
+              <Text style={styles.detailText}>Mgr: {selectedPoint.manager}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Ionicons name="call-outline" size={16} color={COLORS.textSecondary} style={styles.detailIcon}/>
+              <Text style={styles.detailText}>{selectedPoint.contact}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Ionicons name="trash-bin-outline" size={16} color={COLORS.textSecondary} style={styles.detailIcon}/>
+              <Text style={styles.detailText}>{selectedPoint.types.join(', ')}</Text>
+            </View>
+          </View>
+
+          <View style={styles.actionRow}>
+            <TouchableOpacity 
+              style={[styles.primaryButton, { flex: 1, marginRight: SIZES.s }]}
+              onPress={() => setShowConfirmation(true)}
+            >
+              <Ionicons name="chatbubbles" size={18} color={COLORS.surface} style={{marginRight: 6}} />
+              <Text style={styles.primaryButtonText}>Join Chat</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[styles.secondaryButton, { flex: 1 }]}
+              onPress={() => {
+                const url = `https://www.google.com/maps/dir/?api=1&destination=${selectedPoint.coords.latitude},${selectedPoint.coords.longitude}`;
+                Linking.openURL(url);
+              }}
+            >
+              <Ionicons name="navigate" size={18} color={COLORS.primaryDark} style={{marginRight: 6}} />
+              <Text style={styles.secondaryButtonText}>Directions</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
+
+      {/* Confirmation Modal */}
+      <Modal
+        visible={showConfirmation}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={handleCancel}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <View style={[styles.iconBgResult, { width: 64, height: 64, borderRadius: 32 }]}>
+                 <Ionicons name="chatbubbles" size={32} color={COLORS.primaryDark} />
+              </View>
+              <Text style={styles.modalTitle}>Join Chat Room</Text>
+            </View>
+            
+            {selectedPoint && (
+              <View style={styles.modalBody}>
+                <Text style={styles.modalText}>
+                  Connect directly with <Text style={{fontWeight: 'bold', color: COLORS.text}}>{selectedPoint.manager}</Text> at {selectedPoint.name}.
+                </Text>
+              </View>
+            )}
+
+            <View style={styles.modalFooter}>
+              <TouchableOpacity style={styles.modalCancel} onPress={handleCancel}>
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalJoin} onPress={handleJoinChat}>
+                <Text style={styles.modalJoinText}>Join Now</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -328,262 +322,327 @@ const RwandaMap = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fffe',
+    backgroundColor: COLORS.background,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 50,
+    paddingBottom: SIZES.m,
+    backgroundColor: COLORS.primaryDark,
+    paddingHorizontal: SIZES.m,
+    zIndex: 10,
+    ...SHADOWS.small,
+  },
+  headerNav: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: SIZES.xs,
+  },
+  headerNavRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: SIZES.xs,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderRadius: SIZES.radiusPill,
+    paddingHorizontal: SIZES.s,
+  },
+  headerNavText: {
+    color: COLORS.surface,
+    fontSize: SIZES.body1,
+    fontWeight: '700',
+    marginLeft: 6,
+  },
+  headerNavTextRight: {
+    color: COLORS.warning,
+    fontSize: SIZES.caption,
+    fontWeight: '700',
+    marginLeft: 4,
+  },
+  titleContainer: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  headerTitle: {
+    color: COLORS.surface,
+    fontSize: SIZES.h3,
+    fontWeight: '800',
   },
   map: {
     flex: 1,
     width: '100%',
-    height: '100%',
+  },
+  markerContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.primary,
+    borderColor: '#D1FAE5',
+    borderWidth: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...SHADOWS.small,
   },
   searchContainer: {
     position: 'absolute',
-    top: 50,
+    top: 110,
     left: 0,
     right: 0,
     zIndex: 5,
+    paddingHorizontal: SIZES.m,
   },
   searchBarContainer: {
     backgroundColor: 'transparent',
-    borderBottomColor: 'transparent',
-    borderTopColor: 'transparent',
-    marginHorizontal: 10,
+    borderTopWidth: 0,
+    borderBottomWidth: 0,
+    padding: 0,
+    ...SHADOWS.medium,
   },
   searchBarInputContainer: {
-    backgroundColor: '#FFF',
+    backgroundColor: COLORS.surface,
+    borderRadius: SIZES.radiusPill,
+    height: 50,
+  },
+  searchBarInput: {
+    fontSize: SIZES.body1,
+    color: COLORS.text,
   },
   searchResultsContainer: {
-    backgroundColor: 'white',
-    marginHorizontal: 10,
-    maxHeight: 200,
-    borderRadius: 10,
+    backgroundColor: COLORS.surface,
+    marginTop: SIZES.xs,
+    maxHeight: 250,
+    borderRadius: SIZES.radiusLg,
+    ...SHADOWS.medium,
   },
   searchResultItem: {
-    padding: 15,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: SIZES.m,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: '#F1F5F9',
   },
   searchResultTitle: {
-    fontWeight: 'bold',
-    fontSize: 16,
-    color: '#2d6a4f',
+    fontWeight: '700',
+    fontSize: SIZES.body1,
+    color: COLORS.text,
   },
   searchResultSubtitle: {
-    color: '#6c6c6c',
-    fontSize: 14,
+    color: COLORS.textSecondary,
+    fontSize: SIZES.caption,
+    marginTop: 2,
   },
-  infoContainer: {
+  floatingCard: {
     position: 'absolute',
-    top: 10,
-    left: 10,
-    backgroundColor: 'white',
-    padding: 15,
-    borderRadius: 20,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    bottom: 30,
+    left: SIZES.m,
+    right: SIZES.m,
+    backgroundColor: COLORS.surface,
+    borderRadius: SIZES.radiusXl,
+    padding: SIZES.l,
+    ...SHADOWS.large,
     zIndex: 10,
   },
-  infoTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2d6a4f',
+  closeCardBtn: {
+    position: 'absolute',
+    top: -10,
+    right: -10,
+    backgroundColor: COLORS.surface,
+    borderRadius: 15,
   },
-  infoSubtitle: {
-    fontSize: 14,
-    color: '#6c6c6c',
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SIZES.s,
   },
-  markerContainer: {
-    backgroundColor: '#ff6a4f',
-    padding: 1,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: '#fff',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 3,
-  },
-  markerInner: {
-    backgroundColor: '#ff6a4f',
-    width: 24,
-    height: 24,
-    borderRadius: 40,
+  iconBgResult: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#E0F2FE',
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: SIZES.m,
   },
-  calloutContainer: {
-    width: 250,
-    backgroundColor: 'white',
-    borderRadius: 10,
-    padding: 15,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+  cardTitle: {
+    fontSize: SIZES.h3,
+    fontWeight: '800',
+    color: COLORS.text,
   },
-  calloutTitle: {
-    fontWeight: 'bold',
-    fontSize: 16,
-    color: '#2d6a4f',
-    marginBottom: 5,
+  cardSubtitle: {
+    fontSize: SIZES.caption,
+    color: COLORS.textSecondary,
+    fontWeight: '600',
+    marginTop: 2,
   },
-  calloutDescription: {
-    fontSize: 14,
-    color: '#6c6c6c',
-    marginBottom: 5,
+  cardBadges: {
+    flexDirection: 'row',
+    marginBottom: SIZES.m,
   },
-  calloutText: {
-    fontSize: 14,
-    marginBottom: 3,
+  badge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: SIZES.radiusPill,
+    marginRight: SIZES.s,
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+  },
+  cardDetails: {
+    backgroundColor: '#F8FAFC',
+    borderRadius: SIZES.radiusLg,
+    padding: SIZES.m,
+    marginBottom: SIZES.m,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  detailIcon: {
+    marginRight: 8,
+    width: 20,
+  },
+  detailText: {
+    fontSize: SIZES.body2,
+    color: COLORS.textSecondary,
+    fontWeight: '500',
+    flex: 1,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  primaryButton: {
+    flexDirection: 'row',
+    backgroundColor: COLORS.primaryDark,
+    borderRadius: SIZES.radiusPill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+  },
+  primaryButtonText: {
+    color: COLORS.surface,
+    fontWeight: '700',
+    fontSize: SIZES.body2,
+  },
+  secondaryButton: {
+    flexDirection: 'row',
+    backgroundColor: '#E0F2FE',
+    borderRadius: SIZES.radiusPill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+  },
+  secondaryButtonText: {
+    color: COLORS.primaryDark,
+    fontWeight: '700',
+    fontSize: SIZES.body2,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(15, 23, 42, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: 'white',
-    borderRadius: 20,
-    padding: 20,
-    width: '90%',
-    maxWidth: 400,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    backgroundColor: COLORS.surface,
+    borderRadius: SIZES.radiusXl,
+    padding: SIZES.xl,
+    width: '85%',
+    alignItems: 'center',
+    ...SHADOWS.large,
   },
   modalHeader: {
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: SIZES.m,
   },
   modalTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#2d6a4f',
-    marginTop: 10,
+    fontSize: SIZES.h3,
+    fontWeight: '800',
+    color: COLORS.text,
+    marginTop: SIZES.m,
   },
   modalBody: {
-    marginBottom: 20,
+    marginBottom: SIZES.l,
+    alignItems: 'center',
   },
   modalText: {
-    fontSize: 18,
-    color: '#333',
+    fontSize: SIZES.body1,
+    color: COLORS.textSecondary,
     textAlign: 'center',
-    marginBottom: 10,
-  },
-  modalSubText: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 15,
-  },
-  modalInfo: {
-    backgroundColor: 'rgba(45, 106, 79, 0.1)',
-    padding: 15,
-    borderRadius: 10,
-  },
-  modalInfoText: {
-    fontSize: 14,
-    color: '#333',
-    marginBottom: 5,
-  },
-  modalInfoLabel: {
-    fontWeight: 'bold',
-    color: '#2d6a4f',
+    lineHeight: 24,
   },
   modalFooter: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 10,
+    width: '100%',
+    justifyContent: 'center',
+    gap: SIZES.m,
   },
-  modalButton: {
+  modalCancel: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 10,
-    marginHorizontal: 5,
+    paddingVertical: 14,
+    borderRadius: SIZES.radiusPill,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
   },
-  cancelButton: {
-    backgroundColor: '#f8f9fa',
-    borderWidth: 1,
-    borderColor: '#2d6a4f',
+  modalCancelText: {
+    color: COLORS.textSecondary,
+    fontWeight: '700',
+    fontSize: SIZES.body1,
   },
-  joinButton: {
-    backgroundColor: '#2d6a4f',
+  modalJoin: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: SIZES.radiusPill,
+    backgroundColor: COLORS.primaryDark,
+    alignItems: 'center',
   },
-  cancelButtonText: {
-    color: '#2d6a4f',
-    textAlign: 'center',
-    fontSize: 16,
-    fontWeight: '600',
+  modalJoinText: {
+    color: COLORS.surface,
+    fontWeight: '700',
+    fontSize: SIZES.body1,
   },
-  joinButtonText: {
-    color: 'white',
-    textAlign: 'center',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  selectedPointContainer: {
+  notificationPanel: {
     position: 'absolute',
-    top: 120,
-    left: 10,
-    right: 10,
-    backgroundColor: 'white',
-    borderRadius: 15,
-    padding: 15,
-    elevation: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    top: 170,
+    right: SIZES.m,
+    backgroundColor: COLORS.surface,
+    borderRadius: SIZES.radiusLg,
+    padding: SIZES.m,
+    width: 280,
+    zIndex: 20,
+    ...SHADOWS.large,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
-  selectedPointContent: {
-    flex: 1,
-  },
-  selectedPointHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  selectedPointTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2d6a4f',
-    flex: 1,
-  },
-  joinChatButton: {
+  notifHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#2d6a4f',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 20,
+    marginBottom: SIZES.s,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+    paddingBottom: SIZES.xs,
   },
-  joinChatText: {
-    color: 'white',
-    marginLeft: 5,
-    fontWeight: '600',
+  notifTitle: {
+    fontWeight: '800',
+    color: COLORS.text,
+    fontSize: SIZES.body2,
   },
-  selectedPointDetails: {
-    backgroundColor: 'rgba(45, 106, 79, 0.1)',
-    padding: 10,
-    borderRadius: 10,
+  notifRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: SIZES.s,
   },
-  selectedPointText: {
-    fontSize: 14,
-    color: '#333',
-    marginBottom: 5,
-  },
-  selectedPointLabel: {
-    fontWeight: 'bold',
-    color: '#2d6a4f',
+  notifText: {
+    color: COLORS.textSecondary,
+    fontSize: SIZES.caption,
+    flex: 1,
+    lineHeight: 18,
   },
 });
 
-export default RwandaMap;
+export default CollectionPoints;

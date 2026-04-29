@@ -27,24 +27,28 @@ const QuizScreen = ({ navigation }) => {
   const [totalEcoPoints, setTotalEcoPoints] = useState(0);
 
   const shakeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const scaleAnims = useRef(quizQuestions[0].options.map(() => new Animated.Value(1))).current;
   const fadeAnim = useRef(new Animated.Value(1)).current;
+
+  // Add more dynamic animations for completion
+  const bounceAnim = useRef(new Animated.Value(0)).current;
 
   const currentQuestion = quizQuestions[currentQuestionIndex];
 
   const triggerShake = () => {
     Animated.sequence([
-      Animated.timing(shakeAnim, { toValue: 10, duration: 100, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: -10, duration: 100, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 10, duration: 100, useNativeDriver: true }),
-      Animated.timing(shakeAnim, { toValue: 0, duration: 100, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 10, duration: 80, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: -10, duration: 80, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 10, duration: 80, useNativeDriver: true }),
+      Animated.timing(shakeAnim, { toValue: 0, duration: 80, useNativeDriver: true }),
     ]).start();
   };
 
-  const triggerPulse = () => {
+  const triggerPulse = (index) => {
     Animated.sequence([
-      Animated.timing(scaleAnim, { toValue: 1.05, duration: 200, useNativeDriver: true }),
-      Animated.timing(scaleAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
+      Animated.timing(scaleAnims[index], { toValue: 0.95, duration: 100, useNativeDriver: true }),
+      Animated.spring(scaleAnims[index], { toValue: 1.02, friction: 4, useNativeDriver: true }),
+      Animated.spring(scaleAnims[index], { toValue: 1, friction: 4, useNativeDriver: true }),
     ]).start();
   };
 
@@ -58,7 +62,7 @@ const QuizScreen = ({ navigation }) => {
 
     if (isCorrect) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      triggerPulse();
+      triggerPulse(index);
       const newScore = score + 1;
       const newStreak = streak + 1;
       const points = currentQuestion.ecoPoints;
@@ -72,6 +76,7 @@ const QuizScreen = ({ navigation }) => {
         text1: '🎉 Correct!',
         text2: `+${points} Eco Points`,
         duration: 2000,
+        position: 'bottom',
       });
     } else {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
@@ -82,6 +87,7 @@ const QuizScreen = ({ navigation }) => {
         text1: '❌ Incorrect',
         text2: currentQuestion.explanation,
         duration: 3000,
+        position: 'bottom',
       });
     }
   };
@@ -89,8 +95,8 @@ const QuizScreen = ({ navigation }) => {
   const handleNext = () => {
     if (currentQuestionIndex < quizQuestions.length - 1) {
       Animated.sequence([
-        Animated.timing(fadeAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
-        Animated.timing(fadeAnim, { toValue: 1, duration: 200, useNativeDriver: true }),
+        Animated.timing(fadeAnim, { toValue: 0, duration: 150, useNativeDriver: true }),
+        Animated.timing(fadeAnim, { toValue: 1, duration: 150, useNativeDriver: true }),
       ]).start();
 
       setCurrentQuestionIndex(currentQuestionIndex + 1);
@@ -103,8 +109,14 @@ const QuizScreen = ({ navigation }) => {
 
   const completeQuiz = () => {
     setQuizComplete(true);
+    
+    Animated.spring(bounceAnim, {
+      toValue: 1,
+      friction: 5,
+      tension: 40,
+      useNativeDriver: true,
+    }).start();
 
-    // Award eco points to user
     if (user) {
       const updatedUser = {
         ...user,
@@ -113,7 +125,6 @@ const QuizScreen = ({ navigation }) => {
       setUser(updatedUser);
     }
 
-    // Check for badge
     const badge = getQuizStreak(score);
     if (badge) {
       Toast.show({
@@ -121,6 +132,7 @@ const QuizScreen = ({ navigation }) => {
         text1: `🏆 Badge Unlocked!`,
         text2: `You earned the "${badge.badge}" badge!`,
         duration: 3000,
+        position: 'top',
       });
     }
   };
@@ -133,232 +145,207 @@ const QuizScreen = ({ navigation }) => {
     setStreak(0);
     setQuizComplete(false);
     setTotalEcoPoints(0);
+    bounceAnim.setValue(0);
   };
 
   if (quizComplete) {
     const badge = getQuizStreak(score);
     const percentage = Math.round((score / quizQuestions.length) * 100);
+    const isSuccess = percentage >= 70;
 
     return (
-      <SafeAreaView style={styles.container}>
-        <LinearGradient colors={['#E8F5E9', '#C8E6C9']} style={styles.gradient}>
-          <ScrollView contentContainerStyle={styles.completeContainer}>
-            <View style={styles.resultCard}>
-              <Ionicons
-                name={percentage >= 70 ? 'checkmark-circle' : 'alert-circle'}
-                size={80}
-                color={percentage >= 70 ? '#00C896' : '#FF6B35'}
-                style={{ marginBottom: 16 }}
-              />
-
-              <Text style={styles.resultTitle}>Quiz Complete!</Text>
-
-              <View style={styles.scoreBox}>
-                <Text style={styles.scoreText}>{score}</Text>
-                <Text style={styles.scoreLabel}>out of {quizQuestions.length}</Text>
-              </View>
-
-              <Text style={styles.percentageText}>{percentage}%</Text>
-
-              <View style={styles.pointsBox}>
-                <Ionicons name="leaf" size={24} color="#00C896" />
-                <Text style={styles.pointsText}>+{totalEcoPoints} Eco Points</Text>
-              </View>
-
-              {badge && (
-                <View style={styles.badgeBox}>
-                  <Ionicons name="medal" size={32} color="#FFD700" />
-                  <Text style={styles.badgeText}>{badge.badge}</Text>
+      <View style={styles.container}>
+        <StatusBar barStyle="dark-content" />
+        <LinearGradient colors={isSuccess ? ['#ECFDF5', '#D1FAE5'] : ['#FEF2F2', '#FEE2E2']} style={styles.gradient}>
+          <SafeAreaView style={styles.safeArea}>
+            <ScrollView contentContainerStyle={styles.completeContainer}>
+              <Animated.View style={[styles.resultCard, {
+                transform: [
+                  { translateY: bounceAnim.interpolate({ inputRange: [0, 1], outputRange: [100, 0] }) },
+                  { scale: bounceAnim.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1] }) }
+                ],
+                opacity: bounceAnim
+              }]}>
+                <View style={[styles.iconBgResult, { backgroundColor: isSuccess ? '#D1FAE5' : '#FEE2E2' }]}>
+                  <Ionicons name={isSuccess ? 'trophy' : 'refresh'} size={64} color={isSuccess ? '#00C896' : '#FF6B35'} />
                 </View>
-              )}
 
-              <Text style={styles.feedbackText}>
-                {percentage >= 80
-                  ? '🌟 Outstanding! You\'re an Eco Expert!'
-                  : percentage >= 60
-                  ? '👍 Great job! Keep learning!'
-                  : '📚 Good effort! Review the explanations.'}
-              </Text>
+                <Text style={styles.resultTitle}>{isSuccess ? 'Quiz Conquered!' : 'Quiz Complete!'}</Text>
 
-              <TouchableOpacity
-                style={styles.restartButton}
-                onPress={handleRestart}
-              >
-                <Text style={styles.restartButtonText}>Take Another Quiz</Text>
-              </TouchableOpacity>
+                <View style={styles.scoreRow}>
+                  <View style={styles.scoreBox}>
+                    <Text style={styles.scoreText}>{score}</Text>
+                    <Text style={styles.scoreLabel}>Out of {quizQuestions.length}</Text>
+                  </View>
+                  <View style={styles.scoreDivider} />
+                  <View style={styles.scoreBox}>
+                    <Text style={[styles.scoreText, { color: isSuccess ? '#00C896' : '#FF6B35' }]}>{percentage}%</Text>
+                    <Text style={styles.scoreLabel}>Accuracy</Text>
+                  </View>
+                </View>
 
-              <TouchableOpacity
-                style={styles.homeButton}
-                onPress={() => navigation.goBack()}
-              >
-                <Text style={styles.homeButtonText}>Back to Home</Text>
-              </TouchableOpacity>
-            </View>
-          </ScrollView>
+                <View style={styles.pointsEarnedBox}>
+                  <Ionicons name="leaf" size={24} color="#00C896" />
+                  <Text style={styles.pointsEarnedText}>+{totalEcoPoints} Eco Points Earned</Text>
+                </View>
+
+                {badge && (
+                  <View style={styles.badgeBox}>
+                    <Ionicons name="medal" size={24} color="#F59E0B" style={{marginRight: 8}} />
+                    <Text style={styles.badgeText}>Unlocked: {badge.badge}</Text>
+                  </View>
+                )}
+
+                <Text style={styles.feedbackText}>
+                  {percentage >= 80 ? '🌟 Outstanding! You\'re an Eco Expert!' : percentage >= 60 ? '👍 Great job! Keep learning!' : '📚 Good effort! Review the explanations.'}
+                </Text>
+
+                <TouchableOpacity style={[styles.primaryButton, {backgroundColor: isSuccess ? '#00C896' : '#1B5E20'}]} onPress={handleRestart}>
+                  <Text style={styles.primaryButtonText}>Play Again</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.secondaryButton} onPress={() => navigation.goBack()}>
+                  <Text style={styles.secondaryButtonText}>Return to Home</Text>
+                </TouchableOpacity>
+              </Animated.View>
+            </ScrollView>
+          </SafeAreaView>
         </LinearGradient>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <LinearGradient colors={['#E0F7FA', '#B2EBF2']} style={styles.gradient}>
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" />
+      <SafeAreaView style={styles.safeArea}>
+        
         {/* Header */}
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()}>
-            <Ionicons name="arrow-back" size={28} color="#1B5E20" />
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <Ionicons name="close" size={28} color="#1B5E20" />
           </TouchableOpacity>
 
           <View style={styles.progressContainer}>
             <Text style={styles.progressText}>
-              {currentQuestionIndex + 1} / {quizQuestions.length}
+              Question <Text style={{fontWeight: '800', color: '#1B5E20'}}>{currentQuestionIndex + 1}</Text> of {quizQuestions.length}
             </Text>
             <View style={styles.progressBar}>
-              <View
-                style={[
-                  styles.progressFill,
-                  {
-                    width: `${((currentQuestionIndex + 1) / quizQuestions.length) * 100}%`,
-                  },
-                ]}
-              />
+              <Animated.View style={[styles.progressFill, { width: `${((currentQuestionIndex + 1) / quizQuestions.length) * 100}%` }]} />
             </View>
           </View>
 
           <View style={styles.scoreDisplay}>
-            <Ionicons name="leaf" size={20} color="#00C896" />
+            <Ionicons name="leaf" size={16} color="#00C896" />
             <Text style={styles.scoreDisplayText}>{score}</Text>
           </View>
         </View>
 
-        <ScrollView
-          contentContainerStyle={styles.content}
-          showsVerticalScrollIndicator={false}
-        >
-          <Animated.View
-            style={[
-              styles.questionCard,
-              { transform: [{ translateX: shakeAnim }], opacity: fadeAnim },
-            ]}
-          >
-            {/* Category Badge */}
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          <Animated.View style={[styles.questionCard, { transform: [{ translateX: shakeAnim }], opacity: fadeAnim }]}>
+            
             <View style={styles.categoryBadge}>
               <Text style={styles.categoryText}>{currentQuestion.category}</Text>
             </View>
 
-            {/* Question */}
             <Text style={styles.question}>{currentQuestion.question}</Text>
 
-            {/* Options */}
             <View style={styles.optionsContainer}>
               {currentQuestion.options.map((option, index) => {
                 const isSelected = selectedAnswer === index;
                 const isCorrect = option.isCorrect;
                 const showResult = answered && isSelected;
+                
+                // Let's also show correct answers if wrong was chosen
+                const showCorrectAnswer = answered && !isSelected && isCorrect && selectedAnswer !== null;
 
                 let optionStyle = styles.option;
                 let optionTextStyle = styles.optionText;
+                let circleColor = '#999';
+                let circleIcon = null;
 
-                if (showResult) {
+                if (showResult || showCorrectAnswer) {
                   if (isCorrect) {
                     optionStyle = [styles.option, styles.optionCorrect];
                     optionTextStyle = [styles.optionText, styles.optionTextCorrect];
-                  } else {
+                    circleColor = '#00C896';
+                    circleIcon = 'checkmark';
+                  } else if (showResult) {
                     optionStyle = [styles.option, styles.optionIncorrect];
                     optionTextStyle = [styles.optionText, styles.optionTextIncorrect];
+                    circleColor = '#FF6B35';
+                    circleIcon = 'close';
                   }
+                } else if (isSelected) {
+                  optionStyle = [styles.option, styles.optionSelected];
                 }
 
                 return (
-                  <TouchableOpacity
-                    key={index}
-                    style={optionStyle}
-                    onPress={() => handleAnswerSelect(index)}
-                    disabled={answered}
-                    activeOpacity={0.7}
-                  >
-                    <View style={styles.optionContent}>
-                      <View
-                        style={[
-                          styles.optionCircle,
-                          isSelected && styles.optionCircleSelected,
-                        ]}
-                      >
-                        {showResult && (
-                          <Ionicons
-                            name={isCorrect ? 'checkmark' : 'close'}
-                            size={16}
-                            color="#fff"
-                          />
-                        )}
+                  <Animated.View key={index} style={{ transform: [{ scale: scaleAnims[index] || 1 }] }}>
+                    <TouchableOpacity
+                      style={optionStyle}
+                      onPress={() => handleAnswerSelect(index)}
+                      disabled={answered}
+                      activeOpacity={0.7}
+                    >
+                      <View style={styles.optionContent}>
+                        <View style={[styles.optionCircle, { borderColor: circleColor, backgroundColor: circleIcon ? circleColor : 'transparent' }]}>
+                          {circleIcon && <Ionicons name={circleIcon} size={16} color="#fff" />}
+                        </View>
+                        <Text style={optionTextStyle}>{option.text}</Text>
                       </View>
-                      <Text style={optionTextStyle}>{option.text}</Text>
-                    </View>
-                  </TouchableOpacity>
+                    </TouchableOpacity>
+                  </Animated.View>
                 );
               })}
             </View>
 
-            {/* Explanation */}
+            {/* Explanation box */}
             {answered && (
-              <View
-                style={[
-                  styles.explanationBox,
-                  selectedAnswer !== null &&
-                  quizQuestions[currentQuestionIndex].options[selectedAnswer]
-                    .isCorrect
-                    ? styles.explanationCorrect
-                    : styles.explanationIncorrect,
-                ]}
-              >
+              <Animated.View style={[styles.explanationBox, { opacity: fadeAnim }]}>
                 <Ionicons
-                  name={
-                    selectedAnswer !== null &&
-                    quizQuestions[currentQuestionIndex].options[selectedAnswer]
-                      .isCorrect
-                      ? 'checkmark-circle'
-                      : 'alert-circle'
-                  }
+                  name={quizQuestions[currentQuestionIndex].options[selectedAnswer]?.isCorrect ? 'bulb' : 'information-circle'}
                   size={20}
-                  color={
-                    selectedAnswer !== null &&
-                    quizQuestions[currentQuestionIndex].options[selectedAnswer]
-                      .isCorrect
-                      ? '#00C896'
-                      : '#FF6B35'
-                  }
-                  style={{ marginRight: 8 }}
+                  color="#00C896"
+                  style={{ marginRight: 8, marginTop: 2 }}
                 />
-                <Text style={styles.explanationText}>
-                  {currentQuestion.explanation}
-                </Text>
-              </View>
+                <View style={{flex: 1}}>
+                  <Text style={styles.explanationTitle}>Did you know?</Text>
+                  <Text style={styles.explanationText}>{currentQuestion.explanation}</Text>
+                </View>
+              </Animated.View>
             )}
           </Animated.View>
         </ScrollView>
 
-        {/* Next Button */}
-        {answered && (
-          <TouchableOpacity
-            style={styles.nextButton}
-            onPress={handleNext}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.nextButtonText}>
-              {currentQuestionIndex === quizQuestions.length - 1
-                ? 'Finish Quiz'
-                : 'Next Question'}
-            </Text>
-            <Ionicons name="arrow-forward" size={20} color="#fff" />
-          </TouchableOpacity>
-        )}
-      </LinearGradient>
-    </SafeAreaView>
+        {/* Footer actions */}
+        <View style={styles.footer}>
+          {answered ? (
+            <TouchableOpacity style={styles.nextButton} onPress={handleNext} activeOpacity={0.8}>
+              <Text style={styles.nextButtonText}>
+                {currentQuestionIndex === quizQuestions.length - 1 ? 'See Results' : 'Next Question'}
+              </Text>
+              <Ionicons name="arrow-forward" size={20} color="#fff" />
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.footerHint}>
+              <Text style={styles.footerHintText}>Select an answer to continue</Text>
+            </View>
+          )}
+        </View>
+
+      </SafeAreaView>
+      <Toast />
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    backgroundColor: '#E0F7FA',
+  },
+  safeArea: {
     flex: 1,
   },
   gradient: {
@@ -370,94 +357,116 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    backgroundColor: 'rgba(255,255,255,0.7)',
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+    zIndex: 10,
+  },
+  backButton: {
+    padding: 8,
   },
   progressContainer: {
     flex: 1,
-    marginHorizontal: 12,
+    alignItems: 'center',
+    marginHorizontal: 16,
   },
   progressText: {
     fontSize: 12,
     color: '#666',
-    marginBottom: 4,
-    fontWeight: '600',
+    marginBottom: 6,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   progressBar: {
-    height: 6,
-    backgroundColor: '#e0e0e0',
-    borderRadius: 3,
+    width: '100%',
+    height: 8,
+    backgroundColor: '#F1F5F9',
+    borderRadius: 4,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
     backgroundColor: '#00C896',
-    borderRadius: 3,
+    borderRadius: 4,
   },
   scoreDisplay: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E8F5E9',
+    backgroundColor: '#ECFDF5',
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#D1FAE5',
   },
   scoreDisplayText: {
     marginLeft: 6,
-    fontWeight: 'bold',
-    color: '#00C896',
+    fontWeight: '800',
+    color: '#00A578',
     fontSize: 14,
   },
   content: {
     flexGrow: 1,
     padding: 16,
-    justifyContent: 'center',
   },
   questionCard: {
     backgroundColor: '#fff',
     borderRadius: 20,
     padding: 20,
-    elevation: 3,
+    marginTop: 12,
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 8,
+    elevation: 3,
   },
   categoryBadge: {
     alignSelf: 'flex-start',
-    backgroundColor: '#E0F7FA',
+    backgroundColor: '#E0F2FE',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 12,
-    marginBottom: 12,
+    borderRadius: 8,
+    marginBottom: 16,
   },
   categoryText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#00A8CC',
+    fontWeight: '700',
+    color: '#0284C7',
+    textTransform: 'uppercase',
   },
   question: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '800',
     color: '#1B5E20',
     marginBottom: 20,
-    lineHeight: 26,
+    lineHeight: 28,
   },
   optionsContainer: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   option: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#fff',
     borderRadius: 12,
-    padding: 14,
-    marginBottom: 10,
+    padding: 16,
+    marginBottom: 12,
     borderWidth: 2,
-    borderColor: '#e0e0e0',
+    borderColor: '#F1F5F9',
+    shadowColor: '#000',
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  optionSelected: {
+    borderColor: '#00C896',
+    backgroundColor: '#F8FAFC',
   },
   optionCorrect: {
-    backgroundColor: '#E8F5E9',
+    backgroundColor: '#ECFDF5',
     borderColor: '#00C896',
   },
   optionIncorrect: {
-    backgroundColor: '#FFEBEE',
+    backgroundColor: '#FEF2F2',
     borderColor: '#FF6B35',
   },
   optionContent: {
@@ -469,23 +478,18 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#ccc',
     marginRight: 12,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  optionCircleSelected: {
-    borderColor: '#00C896',
-    backgroundColor: '#00C896',
   },
   optionText: {
     fontSize: 14,
     color: '#333',
     flex: 1,
-    fontWeight: '500',
+    fontWeight: '600',
   },
   optionTextCorrect: {
-    color: '#00C896',
+    color: '#00A578',
   },
   optionTextIncorrect: {
     color: '#FF6B35',
@@ -495,132 +499,178 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 12,
     marginTop: 12,
+    backgroundColor: '#F0F9FF',
+    borderWidth: 1,
+    borderColor: '#BAE6FD',
   },
-  explanationCorrect: {
-    backgroundColor: '#E8F5E9',
-  },
-  explanationIncorrect: {
-    backgroundColor: '#FFEBEE',
+  explanationTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#00A578',
+    marginBottom: 4,
   },
   explanationText: {
-    flex: 1,
     fontSize: 13,
-    color: '#333',
+    color: '#666',
     lineHeight: 20,
+  },
+  footer: {
+    padding: 16,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
   },
   nextButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#00C896',
-    marginHorizontal: 16,
-    marginBottom: 16,
-    paddingVertical: 14,
-    borderRadius: 12,
+    paddingVertical: 18,
+    borderRadius: 25,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
     elevation: 3,
   },
   nextButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '800',
     marginRight: 8,
   },
+  footerHint: {
+    paddingVertical: 18,
+    alignItems: 'center',
+  },
+  footerHintText: {
+    color: '#999',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  // Complete Screen Styles
   completeContainer: {
     flexGrow: 1,
     justifyContent: 'center',
-    padding: 16,
+    padding: 24,
   },
   resultCard: {
     backgroundColor: '#fff',
-    borderRadius: 20,
-    padding: 24,
+    borderRadius: 32,
+    padding: 32,
     alignItems: 'center',
-    elevation: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 5,
+  },
+  iconBgResult: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
   },
   resultTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 28,
+    fontWeight: '800',
     color: '#1B5E20',
-    marginBottom: 16,
+    marginBottom: 20,
+  },
+  scoreRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    width: '100%',
+    paddingVertical: 16,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    marginBottom: 20,
   },
   scoreBox: {
     alignItems: 'center',
-    marginBottom: 12,
+    flex: 1,
+  },
+  scoreDivider: {
+    width: 1,
+    height: 40,
+    backgroundColor: '#E2E8F0',
   },
   scoreText: {
-    fontSize: 48,
-    fontWeight: 'bold',
-    color: '#00C896',
+    fontSize: 40,
+    fontWeight: '900',
+    color: '#1B5E20',
   },
   scoreLabel: {
     fontSize: 14,
     color: '#666',
     marginTop: 4,
+    fontWeight: '600',
   },
-  percentageText: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1B5E20',
-    marginBottom: 16,
-  },
-  pointsBox: {
+  pointsEarnedBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E8F5E9',
-    paddingHorizontal: 16,
+    backgroundColor: '#ECFDF5',
+    paddingHorizontal: 20,
     paddingVertical: 12,
-    borderRadius: 12,
+    borderRadius: 25,
     marginBottom: 16,
   },
-  pointsText: {
+  pointsEarnedText: {
     marginLeft: 8,
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '800',
     color: '#00C896',
   },
   badgeBox: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 25,
+    marginBottom: 20,
   },
   badgeText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#FFD700',
-    marginTop: 8,
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#B45309',
   },
   feedbackText: {
     fontSize: 16,
-    color: '#333',
+    color: '#666',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 24,
     fontWeight: '500',
+    lineHeight: 24,
   },
-  restartButton: {
-    backgroundColor: '#00C896',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    marginBottom: 10,
+  primaryButton: {
+    paddingVertical: 18,
+    borderRadius: 25,
     width: '100%',
     alignItems: 'center',
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
-  restartButtonText: {
+  primaryButtonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '800',
   },
-  homeButton: {
-    backgroundColor: '#4ECDC4',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 12,
+  secondaryButton: {
+    paddingVertical: 16,
+    borderRadius: 25,
     width: '100%',
     alignItems: 'center',
+    backgroundColor: '#F1F5F9',
   },
-  homeButtonText: {
-    color: '#fff',
+  secondaryButtonText: {
+    color: '#666',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
 });
 

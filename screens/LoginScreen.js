@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import axios from 'axios';
-import { Image } from 'react-native';
 import {
   StyleSheet,
   View,
@@ -20,6 +19,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Toast from 'react-native-toast-message';
 import { UserContext } from '../context/UserContext';
+import { COLORS, SIZES, SHADOWS, GLOBAL_STYLES } from '../utils/theme';
 
 const { width, height } = Dimensions.get('window');
 
@@ -29,6 +29,7 @@ const LoginScreen = ({ navigation }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [screenData, setScreenData] = useState(Dimensions.get('window'));
+  const [focusedInput, setFocusedInput] = useState(null);
 
   // Animations
   const formAnim = useRef(new Animated.Value(0)).current;
@@ -54,19 +55,20 @@ const LoginScreen = ({ navigation }) => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-      Animated.timing(logoAnim, {
-        toValue: 1,
         duration: 800,
-        delay: 200,
         useNativeDriver: true,
       }),
-      Animated.timing(formAnim, {
+      Animated.spring(logoAnim, {
         toValue: 1,
-        duration: 1000,
-        delay: 400,
+        friction: 6,
+        tension: 40,
+        useNativeDriver: true,
+      }),
+      Animated.spring(formAnim, {
+        toValue: 1,
+        friction: 8,
+        tension: 30,
+        delay: 200,
         useNativeDriver: true,
       }),
     ]).start();
@@ -100,12 +102,6 @@ const LoginScreen = ({ navigation }) => {
         position: 'top',
       });
       
-      // Navigate based on user type
-      if (response.data.userRole === 'company') {
-        navigation.navigate('CompanyHome');
-      } else {
-        navigation.navigate('Home');
-      }
     } catch (error) {
       Toast.show({
         type: 'error',
@@ -121,17 +117,19 @@ const LoginScreen = ({ navigation }) => {
   const isSmallScreen = screenData.width < 400 || screenData.height < 700;
 
   return (
-    <LinearGradient
-      colors={["#43e97b", "#11998e"]}
-      style={styles.container}
-    >
-      <StatusBar barStyle="dark-content" backgroundColor="#43e97b" />
+    <View style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
+      
+      {/* Dynamic Background */}
+      <View style={styles.backgroundVectorTop} />
+      <View style={styles.backgroundVectorBottom} />
+      
       <SafeAreaView style={styles.safeArea}>
         <KeyboardAvoidingView
           style={styles.keyboardAvoidingView}
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
-          <View style={[styles.centerWrapper, isTablet && styles.centerWrapperTablet]}> {/* Center everything */}
+          <View style={[styles.centerWrapper, isTablet && styles.centerWrapperTablet]}>
             <ScrollView
               contentContainerStyle={[
                 styles.scrollViewContent,
@@ -157,28 +155,22 @@ const LoginScreen = ({ navigation }) => {
                     {
                       opacity: logoAnim,
                       transform: [
-                        {
-                          scale: logoAnim.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [0.5, 1],
-                          }),
-                        },
-                        {
-                          translateY: logoAnim.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [-20, 0],
-                          }),
-                        },
+                        { scale: logoAnim.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1] }) },
+                        { translateY: logoAnim.interpolate({ inputRange: [0, 1], outputRange: [-30, 0] }) },
                       ],
                     },
                   ]}
                 >
+                  <View style={styles.logoIconBg}>
+                    <Ionicons name="leaf" size={isTablet ? 48 : 36} color={COLORS.primary} />
+                  </View>
                   <Text style={[styles.appName, isSmallScreen && styles.appNameSmall, isTablet && styles.appNameTablet]}>
                     Green IQ
                   </Text>
                 </Animated.View>
+                
                 <Text style={[styles.headerTitle, isSmallScreen && styles.headerTitleSmall, isTablet && styles.headerTitleTablet]}>
-                  Welcome Back!
+                  Welcome Back
                 </Text>
                 <Text style={[styles.headerSubtitle, isSmallScreen && styles.headerSubtitleSmall, isTablet && styles.headerSubtitleTablet]}>
                   Sign in to continue your sustainable journey
@@ -198,7 +190,7 @@ const LoginScreen = ({ navigation }) => {
                       {
                         translateY: formAnim.interpolate({
                           inputRange: [0, 1],
-                          outputRange: [50, 0],
+                          outputRange: [60, 0],
                         }),
                       },
                     ],
@@ -207,40 +199,55 @@ const LoginScreen = ({ navigation }) => {
               >
                 <View style={[styles.formContent, isSmallScreen && styles.formContentSmall, isTablet && styles.formContentTablet]}>
                   {/* Email Input */}
-                  <View style={[styles.inputContainer, isSmallScreen && styles.inputContainerSmall, isTablet && styles.inputContainerTablet]}>
+                  <View style={[
+                    styles.inputContainer, 
+                    isSmallScreen && styles.inputContainerSmall, 
+                    isTablet && styles.inputContainerTablet,
+                    focusedInput === 'email' && styles.inputContainerFocused
+                  ]}>
                     <Ionicons
                       name="mail-outline"
-                      size={isTablet ? 28 : isSmallScreen ? 20 : 22}
-                      color="#11998e"
+                      size={isTablet ? 24 : 20}
+                      color={focusedInput === 'email' ? COLORS.primary : COLORS.textMuted}
                       style={styles.inputIcon}
                     />
                     <TextInput
                       style={[styles.input, isSmallScreen && styles.inputSmall, isTablet && styles.inputTablet]}
                       placeholder="Email Address"
-                      placeholderTextColor="#888"
+                      placeholderTextColor={COLORS.textMuted}
                       keyboardType="email-address"
                       value={email}
                       onChangeText={setEmail}
                       autoCapitalize="none"
                       autoCorrect={false}
+                      onFocus={() => setFocusedInput('email')}
+                      onBlur={() => setFocusedInput(null)}
                     />
                   </View>
+                  
                   {/* Password Input */}
-                  <View style={[styles.inputContainer, isSmallScreen && styles.inputContainerSmall, isTablet && styles.inputContainerTablet]}>
+                  <View style={[
+                    styles.inputContainer, 
+                    isSmallScreen && styles.inputContainerSmall, 
+                    isTablet && styles.inputContainerTablet,
+                    focusedInput === 'password' && styles.inputContainerFocused
+                  ]}>
                     <Ionicons
                       name="lock-closed-outline"
-                      size={isTablet ? 28 : isSmallScreen ? 20 : 22}
-                      color="#11998e"
+                      size={isTablet ? 24 : 20}
+                      color={focusedInput === 'password' ? COLORS.primary : COLORS.textMuted}
                       style={styles.inputIcon}
                     />
                     <TextInput
                       style={[styles.input, isSmallScreen && styles.inputSmall, isTablet && styles.inputTablet]}
                       placeholder="Password"
-                      placeholderTextColor="#888"
+                      placeholderTextColor={COLORS.textMuted}
                       secureTextEntry={!showPassword}
                       value={password}
                       onChangeText={setPassword}
                       autoCorrect={false}
+                      onFocus={() => setFocusedInput('password')}
+                      onBlur={() => setFocusedInput(null)}
                     />
                     <TouchableOpacity
                       onPress={() => setShowPassword(!showPassword)}
@@ -249,11 +256,12 @@ const LoginScreen = ({ navigation }) => {
                     >
                       <Ionicons
                         name={showPassword ? 'eye-off-outline' : 'eye-outline'}
-                        size={isTablet ? 28 : isSmallScreen ? 20 : 22}
-                        color="#11998e"
+                        size={isTablet ? 24 : 20}
+                        color={COLORS.textMuted}
                       />
                     </TouchableOpacity>
                   </View>
+                  
                   {/* Forgot Password Link */}
                   <TouchableOpacity 
                     style={styles.forgotPasswordButton}
@@ -263,6 +271,7 @@ const LoginScreen = ({ navigation }) => {
                       Forgot Password?
                     </Text>
                   </TouchableOpacity>
+                  
                   {/* Sign In Button */}
                   <TouchableOpacity
                     style={[
@@ -273,10 +282,10 @@ const LoginScreen = ({ navigation }) => {
                     ]}
                     disabled={!email || !password || isLoading}
                     onPress={handleSignIn}
-                    activeOpacity={0.85}
+                    activeOpacity={0.8}
                   >
                     <LinearGradient
-                      colors={['#43e97b', '#11998e']}
+                      colors={(!email || !password) ? [COLORS.textMuted, COLORS.textMuted] : COLORS.gradientPrimary}
                       style={[styles.signInGradient, isSmallScreen && styles.signInGradientSmall, isTablet && styles.signInGradientTablet]}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 1 }}
@@ -286,13 +295,7 @@ const LoginScreen = ({ navigation }) => {
                       </Text>
                     </LinearGradient>
                   </TouchableOpacity>
-                  {/* Divider */}
-                  <View style={styles.dividerContainer}>
-                    <View style={styles.divider} />
-                   
-                    <View style={styles.divider} />
-                  </View>
-                 
+                  
                   {/* Sign Up Link */}
                   <View style={styles.signUpContainer}>
                     <Text style={[styles.signUpText, isSmallScreen && styles.signUpTextSmall, isTablet && styles.signUpTextTablet]}>
@@ -300,7 +303,7 @@ const LoginScreen = ({ navigation }) => {
                     </Text>
                     <TouchableOpacity hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} onPress={() => navigation.navigate('Register')}>
                       <Text style={[styles.signUpLink, isSmallScreen && styles.signUpLinkSmall, isTablet && styles.signUpLinkTablet]}>
-                        Sign Up
+                        Create an account
                       </Text>
                     </TouchableOpacity>
                   </View>
@@ -311,13 +314,34 @@ const LoginScreen = ({ navigation }) => {
         </KeyboardAvoidingView>
       </SafeAreaView>
       <Toast />
-    </LinearGradient>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: COLORS.background,
+  },
+  backgroundVectorTop: {
+    position: 'absolute',
+    top: -height * 0.1,
+    right: -width * 0.2,
+    width: width * 0.8,
+    height: width * 0.8,
+    borderRadius: width * 0.4,
+    backgroundColor: COLORS.primaryLight,
+    opacity: 0.15,
+  },
+  backgroundVectorBottom: {
+    position: 'absolute',
+    bottom: -height * 0.05,
+    left: -width * 0.3,
+    width: width * 0.9,
+    height: width * 0.9,
+    borderRadius: width * 0.45,
+    backgroundColor: COLORS.accent,
+    opacity: 0.1,
   },
   safeArea: {
     flex: 1,
@@ -337,339 +361,239 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 20,
+    paddingHorizontal: SIZES.xl,
+    paddingVertical: SIZES.xl,
   },
   scrollViewContentTablet: {
     paddingHorizontal: 0,
     paddingVertical: 0,
   },
   landscapeContent: {
-    paddingHorizontal: 40,
+    paddingHorizontal: SIZES.xxl,
   },
   // Header Styles
   headerContainer: {
     alignItems: 'center',
-    marginBottom: 36,
-  },
-  headerContainerSmall: {
-    marginBottom: 24,
+    marginBottom: SIZES.xxl,
+    width: '100%',
   },
   headerContainerTablet: {
-    marginBottom: 48,
+    marginBottom: SIZES.xxxl,
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: SIZES.m,
   },
   logoContainerTablet: {
-    marginBottom: 18,
+    marginBottom: SIZES.l,
   },
-  logoIcon: {
-    marginBottom: 6,
+  logoIconBg: {
+    width: 64,
+    height: 64,
+    borderRadius: 20,
+    backgroundColor: '#E0F2FE',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: SIZES.s,
+    ...SHADOWS.small,
   },
   appName: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: '#fff',
-    letterSpacing: 1.5,
+    fontSize: SIZES.h2,
+    fontWeight: '800',
+    color: COLORS.primary,
+    letterSpacing: 0.5,
   },
   appNameSmall: {
-    fontSize: 20,
+    fontSize: SIZES.h3,
   },
   appNameTablet: {
-    fontSize: 36,
+    fontSize: SIZES.h1,
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: SIZES.h1,
     fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 6,
+    color: COLORS.text,
+    marginBottom: SIZES.xs,
     textAlign: 'center',
   },
   headerTitleSmall: {
-    fontSize: 22,
+    fontSize: SIZES.h2,
   },
   headerTitleTablet: {
     fontSize: 40,
-    marginBottom: 10,
+    marginBottom: SIZES.s,
   },
   headerSubtitle: {
-    fontSize: 15,
-    color: '#11998e',
+    fontSize: SIZES.body1,
+    color: COLORS.textSecondary,
     textAlign: 'center',
-    paddingHorizontal: 20,
-    lineHeight: 20,
     fontWeight: '500',
   },
   headerSubtitleSmall: {
-    fontSize: 13,
-    paddingHorizontal: 30,
+    fontSize: SIZES.body2,
   },
   headerSubtitleTablet: {
-    fontSize: 20,
-    paddingHorizontal: 40,
+    fontSize: SIZES.h4,
   },
   // Form Styles
   formContainer: {
-    width: '90%',
-    maxWidth: 600,
-    minWidth: 320,
+    width: '100%',
+    maxWidth: 500,
     alignSelf: 'center',
-    marginVertical: 32,
   },
   formContainerLandscape: {
-    maxWidth: 700,
+    maxWidth: 600,
   },
   formContainerSmall: {
-    maxWidth: 350,
+    width: '100%',
   },
   formContainerTablet: {
-    maxWidth: 700,
-    minWidth: 400,
+    maxWidth: 550,
   },
   formContent: {
-    backgroundColor: '#fff',
-    paddingVertical: 36,
-    paddingHorizontal: 32,
-    borderRadius: 24,
-    borderWidth: 1.5,
-    borderColor: '#e0e0e0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.13,
-    shadowRadius: 24,
-    elevation: 10,
+    backgroundColor: COLORS.surfaceGlass,
+    paddingVertical: SIZES.xxl,
+    paddingHorizontal: SIZES.l,
+    borderRadius: SIZES.radiusXl,
+    ...SHADOWS.large,
   },
   formContentSmall: {
-    padding: 16,
-    borderRadius: 14,
+    padding: SIZES.m,
+    borderRadius: SIZES.radiusLg,
   },
   formContentTablet: {
-    paddingVertical: 48,
-    paddingHorizontal: 48,
+    paddingVertical: SIZES.xxxl,
+    paddingHorizontal: SIZES.xl,
     borderRadius: 32,
   },
   // Input Styles
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    marginBottom: 20,
-    paddingHorizontal: 12,
-    borderWidth: 1.2,
-    borderColor: '#e0e0e0',
-    height: 48,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.03,
-    shadowRadius: 4,
-    elevation: 1,
+    backgroundColor: COLORS.surface,
+    borderRadius: SIZES.radiusMd,
+    marginBottom: SIZES.m,
+    paddingHorizontal: SIZES.m,
+    borderWidth: 1.5,
+    borderColor: '#E2E8F0',
+    height: 56,
+  },
+  inputContainerFocused: {
+    borderColor: COLORS.primary,
+    backgroundColor: '#F8FAFC',
   },
   inputContainerSmall: {
-    height: 42,
-    borderRadius: 10,
-    marginBottom: 12,
+    height: 48,
+    borderRadius: SIZES.radiusSm,
+    marginBottom: SIZES.s,
   },
   inputContainerTablet: {
-    height: 60,
-    borderRadius: 18,
-    marginBottom: 28,
-    paddingHorizontal: 18,
+    height: 64,
+    borderRadius: SIZES.radiusLg,
+    marginBottom: SIZES.l,
+    paddingHorizontal: SIZES.l,
   },
   inputIcon: {
-    marginRight: 10,
+    marginRight: SIZES.s,
   },
   input: {
     flex: 1,
-    color: '#222',
-    fontSize: 15,
+    color: COLORS.text,
+    fontSize: SIZES.body1,
+    fontWeight: '500',
   },
   inputSmall: {
-    fontSize: 13,
+    fontSize: SIZES.body2,
   },
   inputTablet: {
-    fontSize: 20,
+    fontSize: SIZES.h4,
   },
   eyeButton: {
-    padding: 6,
-    marginLeft: 4,
+    padding: SIZES.xs,
   },
   // Button Styles
   forgotPasswordButton: {
     alignSelf: 'flex-end',
-    marginBottom: 18,
-    paddingVertical: 2,
+    marginBottom: SIZES.l,
   },
-  forgotPasswordText: {
-    color: '#11998e',
-    fontSize: 13,
-    fontWeight: '500',
+  forgotPasswordLink: {
+    color: COLORS.primary,
+    fontSize: SIZES.body2,
+    fontWeight: '600',
+    textAlign: 'right',
   },
-  forgotPasswordTextSmall: {
-    fontSize: 12,
+  forgotPasswordLinkSmall: {
+    fontSize: SIZES.caption,
   },
-  forgotPasswordTextTablet: {
-    fontSize: 16,
+  forgotPasswordLinkTablet: {
+    fontSize: SIZES.body1,
   },
   signInButton: {
-    borderRadius: 24,
+    borderRadius: SIZES.radiusPill,
     overflow: 'hidden',
-    marginBottom: 24,
-    shadowColor: '#11998e',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.18,
-    shadowRadius: 8,
-    elevation: 4,
+    marginBottom: SIZES.l,
+    ...SHADOWS.medium,
   },
   signInButtonSmall: {
-    borderRadius: 14,
-    marginBottom: 16,
+    marginBottom: SIZES.m,
   },
   signInButtonTablet: {
-    borderRadius: 32,
-    marginBottom: 32,
+    marginBottom: SIZES.xl,
   },
   disabledButton: {
-    shadowOpacity: 0.1,
-    elevation: 1,
     opacity: 0.7,
+    shadowOpacity: 0,
   },
   signInGradient: {
-    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 18,
-    borderRadius: 24,
+    height: 56,
   },
   signInGradientSmall: {
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    borderRadius: 14,
+    height: 48,
   },
   signInGradientTablet: {
-    paddingVertical: 20,
-    paddingHorizontal: 32,
-    borderRadius: 32,
+    height: 64,
   },
   signInButtonText: {
-    color: '#fff',
-    fontSize: 17,
-    fontWeight: 'bold',
-    letterSpacing: 1,
+    color: COLORS.textInverse,
+    fontSize: SIZES.h4,
+    fontWeight: '700',
+    letterSpacing: 0.5,
   },
   signInButtonTextSmall: {
-    fontSize: 14,
+    fontSize: SIZES.body1,
   },
   signInButtonTextTablet: {
-    fontSize: 22,
-  },
-  // Divider Styles
-  dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 18,
-  },
-  divider: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#e0e0e0',
-  },
-  dividerText: {
-    color: '#888',
-    marginHorizontal: 12,
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  dividerTextSmall: {
-    fontSize: 12,
-    marginHorizontal: 8,
-  },
-  dividerTextTablet: {
-    fontSize: 16,
-    marginHorizontal: 18,
-  },
-  // Social Login Styles
-  socialLoginContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    marginBottom: 18,
-    gap: 12,
-  },
-  socialLoginContainerSmall: {
-    gap: 8,
-  },
-  socialLoginContainerTablet: {
-    gap: 20,
-    marginBottom: 28,
-  },
-  socialButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  socialButtonSmall: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-  },
-  socialButtonTablet: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    fontSize: SIZES.h3,
   },
   // Sign Up Styles
   signUpContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 2,
+    marginTop: SIZES.xs,
   },
   signUpText: {
-    color: '#888',
-    fontSize: 13,
+    color: COLORS.textSecondary,
+    fontSize: SIZES.body2,
   },
   signUpTextSmall: {
-    fontSize: 12,
+    fontSize: SIZES.caption,
   },
   signUpTextTablet: {
-    fontSize: 16,
+    fontSize: SIZES.body1,
   },
   signUpLink: {
-    color: '#2563eb',
-    fontSize: 13,
+    color: COLORS.primary,
+    fontSize: SIZES.body2,
     fontWeight: '700',
-    marginLeft: 2,
   },
   signUpLinkSmall: {
-    fontSize: 12,
+    fontSize: SIZES.caption,
   },
   signUpLinkTablet: {
-    fontSize: 16,
-  },
-  forgotPasswordLink: {
-    color: '#2563eb',
-    fontSize: 13,
-    fontWeight: '700',
-    textAlign: 'right',
-  },
-  forgotPasswordLinkSmall: {
-    fontSize: 12,
-  },
-  forgotPasswordLinkTablet: {
-    fontSize: 16,
+    fontSize: SIZES.body1,
   },
 });
 

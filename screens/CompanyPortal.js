@@ -1,11 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
-import axios from "axios";
-import Toast from "react-native-toast-message";
 import {
   StyleSheet,
   View,
   Text,
-  Image,
   TouchableOpacity,
   ScrollView,
   SafeAreaView,
@@ -15,55 +12,27 @@ import {
   Animated as RNAnimated,
   useWindowDimensions,
   RefreshControl,
-  ActivityIndicator
+  ActivityIndicator,
+  Linking
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Haptics from 'expo-haptics';
+import MapView, { Marker, PROVIDER_GOOGLE, Polyline } from 'react-native-maps';
+import { COLORS, SIZES, SHADOWS } from '../utils/theme';
 
-const { width, height } = Dimensions.get("window");
+const { width } = Dimensions.get("window");
 
 const companyTips = [
-  { 
-    text: '🏢 Did you know? Companies that implement recycling programs can reduce waste disposal costs by up to 50%!',
-    likes: 45,
-    liked: false
-  },
-  { 
-    text: '💼 Tip: Set up designated recycling stations in your office to encourage employee participation.',
-    likes: 32,
-    liked: false
-  },
-  { 
-    text: '📊 Fact: Businesses that go green often see improved employee satisfaction and retention.',
-    likes: 67,
-    liked: false
-  },
-  { 
-    text: '🌿 Tip: Partner with local recycling facilities for better waste management solutions.',
-    likes: 28,
-    liked: false
-  },
-  { 
-    text: '📈 Fact: Sustainable practices can improve your company\'s public image and attract eco-conscious customers.',
-    likes: 89,
-    liked: false
-  },
-  { 
-    text: '📋 Tip: Track your waste collection data to identify opportunities for improvement and cost savings.',
-    likes: 56,
-    liked: false
-  },
-  { 
-    text: '🎯 Fact: Companies with strong environmental policies often have higher employee engagement scores.',
-    likes: 73,
-    liked: false
-  },
-  { 
-    text: '💡 Tip: Regular training sessions on waste segregation can significantly improve recycling rates.',
-    likes: 41,
-    liked: false
-  }
+  { text: '🏢 Did you know? Dedicated routes save up to 15% in fuel costs weekly.', likes: 45, liked: false },
+  { text: '💼 Tip: Optimize truck capacity by ensuring compacting protocols are followed.', likes: 32, liked: false },
+];
+
+// Truck Routing Points mock (Kigali)
+const routePickups = [
+  { id: '1', title: 'Nyarugenge Market', type: 'High Volume', coords: { latitude: -1.9441, longitude: 30.0619 } },
+  { id: '2', title: 'Kacyiru Office Hub', type: 'Paper & Plastic', coords: { latitude: -1.9300, longitude: 30.0900 } },
+  { id: '3', title: 'Kimironko Center', type: 'Mixed Waste', coords: { latitude: -1.9355, longitude: 30.1123 } },
 ];
 
 const CompanyPortal = ({ navigation }) => {
@@ -72,66 +41,41 @@ const CompanyPortal = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [tips, setTips] = useState(companyTips);
-  const [isOffline, setIsOffline] = useState(false);
-  const [quickActionsVisible, setQuickActionsVisible] = useState(false);
   
-  const scanAnim = useRef(new RNAnimated.Value(0.8)).current;
   const fadeAnim = useRef(new RNAnimated.Value(0)).current;
   const slideAnim = useRef(new RNAnimated.Value(50)).current;
-  const pulseAnim = useRef(new RNAnimated.Value(1)).current;
-  const tipFadeAnim = useRef(new RNAnimated.Value(1)).current;
-  const quickActionsAnim = useRef(new RNAnimated.Value(0)).current;
   
   const window = useWindowDimensions();
   const isTablet = window.width >= 700;
-  const isSmallDevice = window.width < 350;
 
   useEffect(() => {
-    // Using dummy company data
-    const { dummyCompanyData } = require('../utils/dummyData');
-    setCompany(dummyCompanyData);
-    setIsLoading(false);
-  }, []);
-
-  useEffect(() => {
-    // Animate scan button
-    RNAnimated.loop(
-      RNAnimated.sequence([
-        RNAnimated.timing(scanAnim, {
-          toValue: 1.1,
-          duration: 1000,
+    // Simulator delay load
+    setTimeout(() => {
+      const { dummyCompanyData } = require('../utils/dummyData');
+      setCompany(dummyCompanyData);
+      setIsLoading(false);
+      
+      RNAnimated.parallel([
+        RNAnimated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 800,
           useNativeDriver: true,
         }),
-        RNAnimated.timing(scanAnim, {
-          toValue: 0.9,
-          duration: 1000,
+        RNAnimated.spring(slideAnim, {
+          toValue: 0,
+          friction: 8,
           useNativeDriver: true,
         }),
-      ])
-    ).start();
-
-    // Animate content fade in
-    RNAnimated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 800,
-      useNativeDriver: true,
-    }).start();
-
-    // Animate slide up
-    RNAnimated.timing(slideAnim, {
-      toValue: 0,
-      duration: 600,
-      useNativeDriver: true,
-    }).start();
+      ]).start();
+    }, 600);
   }, []);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    // Using dummy data - simulating refresh
-    const { dummyCompanyData } = require('../utils/dummyData');
-    setCompany(dummyCompanyData);
-    setIsOffline(false);
-    setRefreshing(false);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 1000);
   };
 
   const handleLikeTip = (index) => {
@@ -142,456 +86,433 @@ const CompanyPortal = ({ navigation }) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
-  const toggleQuickActions = () => {
-    setQuickActionsVisible(!quickActionsVisible);
-    RNAnimated.timing(quickActionsAnim, {
-      toValue: quickActionsVisible ? 0 : 1,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
+  const openMapsDirections = () => {
+    // Navigates to first pickup logic
+    const point = routePickups[0].coords;
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${point.latitude},${point.longitude}`;
+    Linking.openURL(url);
   };
-
-  const handleMapPress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    navigation.navigate('SafeZonesMap');
-  };
-
-  const handleProfilePress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    navigation.navigate('CompanyProfile');
-  };
-
-  const handleCollectionManagementPress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    navigation.navigate('CollectionMgmt');
-  };
-
-  const handleAnalyticsPress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    navigation.navigate('Analytics');
-  };
-
-  const handleEmployeeManagementPress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    navigation.navigate('Employees');
-  };
-
-  const compactBadgeCircle = (badge) => [
-    {
-      transform: [{ scale: scanAnim }],
-    },
-  ];
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#11998e" />
+      <SafeAreaView style={[styles.container, styles.loadingContainer]}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
         <Text style={styles.loadingText}>Loading Company Portal...</Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <LinearGradient
-      colors={["#43e97b", "#11998e"]}
-      style={styles.container}
-    >
-      <StatusBar barStyle="dark-content" backgroundColor="#43e97b" />
-      <SafeAreaView style={styles.safeArea}>
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-          showsVerticalScrollIndicator={false}
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor={COLORS.background} />
+      
+      {/* Premium Deep Green Header */}
+      <View style={[styles.header, isTablet && styles.headerTablet]}>
+        <View style={styles.headerLeft}>
+           <Text style={styles.headerGreeting}>Company Portal</Text>
+           <Text style={styles.headerTitle}>{company?.companyName || "GreenTech Partners"}</Text>
+        </View>
+        <TouchableOpacity 
+           style={styles.profileBtn}
+           onPress={() => navigation.navigate('CompanyProfile')}
         >
-          {/* Header */}
-          <RNAnimated.View
-            style={[
-              styles.header,
-              {
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }],
-              },
-            ]}
-          >
-            <View style={styles.headerTop}>
-              <View style={styles.welcomeSection}>
-                <Text style={styles.welcomeText}>Welcome back,</Text>
-                <Text style={styles.companyName}>
-                  {company?.companyName || "Company"}
-                </Text>
-              </View>
-              <TouchableOpacity
-                style={styles.profileButton}
-                onPress={handleProfilePress}
-              >
-                <Ionicons name="person-circle" size={40} color="#fff" />
-              </TouchableOpacity>
+           <Ionicons name="business" size={28} color={COLORS.primaryDark} />
+        </TouchableOpacity>
+      </View>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[styles.scrollContent, isTablet && styles.scrollContentTablet]}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[COLORS.primary]} />}
+      >
+        <RNAnimated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+          
+          {/* Quick Actions Scroll */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.quickActionsScroll}>
+            {[
+              { icon: 'trash-bin', label: 'Collections', nav: 'CollectionMgmt', bg: '#D1FAE5', color: COLORS.primaryDark },
+              { icon: 'people', label: 'Drivers', nav: 'Employees', bg: '#DBEAFE', color: '#2563EB' },
+              { icon: 'pie-chart', label: 'Analytics', nav: 'Analytics', bg: '#FEF3C7', color: '#D97706' },
+              { icon: 'map', label: 'Zone Map', nav: 'SafeZonesMap', bg: '#FCE7F3', color: '#BE185D' }
+            ].map((action, idx) => (
+               <TouchableOpacity 
+                  key={idx} 
+                  style={styles.actionPill}
+                  onPress={() => navigation.navigate(action.nav)}
+               >
+                 <View style={[styles.actionIconBg, { backgroundColor: action.bg }]}>
+                    <Ionicons name={action.icon} size={20} color={action.color} />
+                 </View>
+                 <Text style={styles.actionPillText}>{action.label}</Text>
+               </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          {/* ACTIVE TRUCK ROUTING MAP WIDGET */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+               <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                 <Ionicons name="bus" size={24} color={COLORS.primary} style={{marginRight: 8}} />
+                 <Text style={styles.sectionTitle}>Live Truck Route</Text>
+               </View>
+               <View style={styles.activeBadge}>
+                 <Text style={styles.activeBadgeText}>ACTIVE</Text>
+               </View>
             </View>
             
-            {isOffline && (
-              <View style={styles.offlineBanner}>
-                <Ionicons name="wifi-off" size={16} color="#fff" />
-                <Text style={styles.offlineText}>Offline Mode</Text>
-              </View>
-            )}
-          </RNAnimated.View>
+            <View style={styles.mapCard}>
+               <MapView
+                  style={styles.mapView}
+                  provider={PROVIDER_GOOGLE}
+                  initialRegion={{
+                    latitude: -1.9380,
+                    longitude: 30.0800,
+                    latitudeDelta: 0.05,
+                    longitudeDelta: 0.05,
+                  }}
+                  scrollEnabled={false}
+                  zoomEnabled={false}
+               >
+                 {routePickups.map((pt, i) => (
+                    <Marker key={i} coordinate={pt.coords}>
+                       <View style={styles.routeMarker}>
+                         <Text style={styles.routeMarkerText}>{i+1}</Text>
+                       </View>
+                    </Marker>
+                 ))}
+                 <Polyline 
+                   coordinates={routePickups.map(r => r.coords)}
+                   strokeColor={COLORS.primary}
+                   strokeWidth={4}
+                 />
+               </MapView>
+               
+               <View style={styles.mapFooter}>
+                 <View style={{flex: 1}}>
+                    <Text style={styles.mapStopsText}>Next stop: <Text style={{fontWeight: '800', color: COLORS.text}}>{routePickups[0].title}</Text></Text>
+                    <Text style={styles.mapRemainingText}>{routePickups.length} scheduled pickups</Text>
+                 </View>
+                 <TouchableOpacity style={styles.navButton} onPress={openMapsDirections}>
+                    <Ionicons name="navigate" size={18} color={COLORS.surface} style={{marginRight: 6}} />
+                    <Text style={styles.navButtonText}>Start</Text>
+                 </TouchableOpacity>
+               </View>
+            </View>
+          </View>
 
-          {/* Company Stats */}
-          <RNAnimated.View
-            style={[
-              styles.statsContainer,
-              {
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }],
-              },
-            ]}
-          >
-            <View style={styles.statsRow}>
-              <View style={styles.statCard}>
-                <Ionicons name="recycle" size={24} color="#11998e" />
-                <Text style={styles.statNumber}>2,450</Text>
-                <Text style={styles.statLabel}>Items Recycled</Text>
-              </View>
-              <View style={styles.statCard}>
-                <Ionicons name="leaf" size={24} color="#11998e" />
-                <Text style={styles.statNumber}>156</Text>
-                <Text style={styles.statLabel}>CO2 Saved (kg)</Text>
-              </View>
-              <View style={styles.statCard}>
-                <Ionicons name="people" size={24} color="#11998e" />
-                <Text style={styles.statNumber}>25</Text>
-                <Text style={styles.statLabel}>Employees</Text>
-              </View>
-            </View>
-            <View style={styles.statsRow}>
-              <View style={styles.statCard}>
-                <Ionicons name="trending-up" size={24} color="#11998e" />
-                <Text style={styles.statNumber}>$1,250</Text>
-                <Text style={styles.statLabel}>Cost Savings</Text>
-              </View>
-              <View style={styles.statCard}>
-                <Ionicons name="calendar" size={24} color="#11998e" />
-                <Text style={styles.statNumber}>12</Text>
-                <Text style={styles.statLabel}>Collection Days</Text>
-              </View>
-              <View style={styles.statCard}>
-                <Ionicons name="checkmark-circle" size={24} color="#11998e" />
-                <Text style={styles.statNumber}>85%</Text>
-                <Text style={styles.statLabel}>Efficiency Rate</Text>
-              </View>
-            </View>
-          </RNAnimated.View>
-
-          {/* Quick Actions */}
-          <RNAnimated.View
-            style={[
-              styles.quickActionsContainer,
-              {
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }],
-              },
-            ]}
-          >
-            <Text style={styles.sectionTitle}>Quick Actions</Text>
-            <View style={styles.quickActionsGrid}>
-              <TouchableOpacity
-                style={styles.quickActionCard}
-                onPress={handleCollectionManagementPress}
-              >
-                <LinearGradient
-                  colors={["#11998e", "#43e97b"]}
-                  style={styles.quickActionGradient}
-                >
-                  <Ionicons name="business" size={32} color="#fff" />
-                  <Text style={styles.quickActionText}>Collection Mgmt</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={styles.quickActionCard}
-                onPress={handleAnalyticsPress}
-              >
-                <LinearGradient
-                  colors={["#11998e", "#43e97b"]}
-                  style={styles.quickActionGradient}
-                >
-                  <Ionicons name="analytics" size={32} color="#fff" />
-                  <Text style={styles.quickActionText}>Analytics</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={styles.quickActionCard}
-                onPress={handleEmployeeManagementPress}
-              >
-                <LinearGradient
-                  colors={["#11998e", "#43e97b"]}
-                  style={styles.quickActionGradient}
-                >
-                  <Ionicons name="people-circle" size={32} color="#fff" />
-                  <Text style={styles.quickActionText}>Employees</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={styles.quickActionCard}
-                onPress={handleMapPress}
-              >
-                <LinearGradient
-                  colors={["#11998e", "#43e97b"]}
-                  style={styles.quickActionGradient}
-                >
-                  <Ionicons name="map" size={32} color="#fff" />
-                  <Text style={styles.quickActionText}>Collection Points</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </View>
-          </RNAnimated.View>
+          {/* Key Metrics Dashboard */}
+          <View style={styles.section}>
+             <Text style={styles.sectionTitle}>Fleet Performance</Text>
+             <View style={styles.statsGrid}>
+                {[
+                  { value: '2,450', label: 'Tons Collected', icon: 'server' },
+                  { value: '156 kg', label: 'CO2 Offset', icon: 'leaf' },
+                  { value: '85%', label: 'Efficiency', icon: 'speedometer' },
+                  { value: '$1.2k', label: 'Fuel Saved', icon: 'wallet' }
+                ].map((stat, i) => (
+                   <View key={i} style={[styles.statBox, isTablet && styles.statBoxTablet]}>
+                      <Ionicons name={stat.icon} size={22} color={COLORS.primary} style={{marginBottom: SIZES.s}} />
+                      <Text style={styles.statBoxValue}>{stat.value}</Text>
+                      <Text style={styles.statBoxLabel}>{stat.label}</Text>
+                   </View>
+                ))}
+             </View>
+          </View>
 
           {/* Company Tips */}
-          <RNAnimated.View
-            style={[
-              styles.tipsContainer,
-              {
-                opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }],
-              },
-            ]}
-          >
-            <Text style={styles.sectionTitle}>Company Tips</Text>
+          <View style={[styles.section, {marginBottom: 40}]}>
+            <Text style={styles.sectionTitle}>Operational Insights</Text>
             <View style={styles.tipCard}>
               <View style={styles.tipHeader}>
-                <Ionicons name="bulb" size={20} color="#11998e" />
-                <Text style={styles.tipTitle}>Sustainability Tip</Text>
+                <Ionicons name="bulb" size={24} color={COLORS.warning} />
+                <Text style={styles.tipTitle}>Efficiency Tip</Text>
               </View>
               <Text style={styles.tipText}>{tips[tipIndex].text}</Text>
+              
               <View style={styles.tipFooter}>
-                <TouchableOpacity
-                  style={styles.likeButton}
-                  onPress={() => handleLikeTip(tipIndex)}
-                >
-                  <Ionicons
-                    name={tips[tipIndex].liked ? "heart" : "heart-outline"}
-                    size={16}
-                    color={tips[tipIndex].liked ? "#e74c3c" : "#666"}
-                  />
+                <TouchableOpacity style={styles.likeButton} onPress={() => handleLikeTip(tipIndex)}>
+                  <Ionicons name={tips[tipIndex].liked ? "heart" : "heart-outline"} size={20} color={tips[tipIndex].liked ? COLORS.error : COLORS.textMuted} />
                   <Text style={styles.likeCount}>{tips[tipIndex].likes}</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.nextTipButton}
-                  onPress={() => setTipIndex((tipIndex + 1) % tips.length)}
-                >
-                  <Text style={styles.nextTipText}>Next Tip</Text>
-                  <Ionicons name="chevron-forward" size={16} color="#11998e" />
+                <TouchableOpacity style={styles.nextTipButton} onPress={() => setTipIndex((tipIndex + 1) % tips.length)}>
+                  <Text style={styles.nextTipText}>Next Insight</Text>
+                  <Ionicons name="chevron-forward-circle" size={20} color={COLORS.primary} />
                 </TouchableOpacity>
               </View>
             </View>
-          </RNAnimated.View>
-        </ScrollView>
-      </SafeAreaView>
-    </LinearGradient>
+          </View>
+
+        </RNAnimated.View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  safeArea: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 100,
+    backgroundColor: COLORS.background,
   },
   loadingContainer: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#43e97b',
   },
   loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#fff',
-    fontWeight: '600',
+    marginTop: SIZES.m,
+    color: COLORS.primaryDark,
+    fontSize: SIZES.h4,
+    fontWeight: '700',
   },
   header: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 10,
-  },
-  headerTop: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: SIZES.l,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : SIZES.m,
+    paddingBottom: SIZES.l,
   },
-  welcomeSection: {
+  headerTablet: {
+    maxWidth: 900,
+    alignSelf: 'center',
+    width: '100%',
+  },
+  headerLeft: {
     flex: 1,
   },
-  welcomeText: {
-    fontSize: 16,
-    color: '#fff',
-    opacity: 0.9,
-  },
-  companyName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginTop: 4,
-  },
-  profileButton: {
-    padding: 8,
-  },
-  offlineBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    marginTop: 12,
-    alignSelf: 'flex-start',
-  },
-  offlineText: {
-    color: '#fff',
-    fontSize: 12,
-    marginLeft: 6,
+  headerGreeting: {
+    fontSize: SIZES.body2,
+    color: COLORS.textSecondary,
     fontWeight: '600',
+    textTransform: 'uppercase',
   },
-  statsContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 24,
+  headerTitle: {
+    fontSize: SIZES.h2,
+    fontWeight: '800',
+    color: COLORS.text,
+    marginTop: 2,
   },
-  statsRow: {
+  profileBtn: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: '#E0F2FE',
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...SHADOWS.small,
+  },
+  scrollContent: {
+    paddingBottom: SIZES.xl,
+  },
+  scrollContentTablet: {
+    maxWidth: 900,
+    alignSelf: 'center',
+    width: '100%',
+  },
+  quickActionsScroll: {
+    paddingHorizontal: SIZES.m,
+    paddingBottom: SIZES.s,
+    marginBottom: SIZES.xl,
+    gap: SIZES.s,
+  },
+  actionPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surface,
+    padding: SIZES.xs,
+    paddingRight: SIZES.l,
+    borderRadius: SIZES.radiusPill,
+    marginRight: SIZES.s,
+    ...SHADOWS.small,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  actionIconBg: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  actionPillText: {
+    fontSize: SIZES.body2,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  section: {
+    paddingHorizontal: SIZES.l,
+    marginBottom: SIZES.xxl,
+  },
+  sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 16,
-    marginHorizontal: 4,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  statNumber: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#11998e',
-    marginTop: 8,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#666',
-    textAlign: 'center',
-    marginTop: 4,
-  },
-  quickActionsContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 24,
+    marginBottom: SIZES.m,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 16,
+    fontSize: SIZES.h3,
+    fontWeight: '800',
+    color: COLORS.text,
   },
-  quickActionsGrid: {
+  activeBadge: {
+    backgroundColor: COLORS.success,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  activeBadgeText: {
+    color: COLORS.surface,
+    fontSize: 10,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+  },
+  mapCard: {
+    backgroundColor: COLORS.surface,
+    borderRadius: SIZES.radiusXl,
+    overflow: 'hidden',
+    ...SHADOWS.medium,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  mapView: {
+    width: '100%',
+    height: 180,
+  },
+  routeMarker: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: COLORS.primaryDark,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: COLORS.surface,
+    ...SHADOWS.small,
+  },
+  routeMarkerText: {
+    color: COLORS.surface,
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  mapFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: SIZES.m,
+    backgroundColor: COLORS.surface,
+  },
+  mapStopsText: {
+    fontSize: SIZES.body1,
+    color: COLORS.textSecondary,
+  },
+  mapRemainingText: {
+    fontSize: SIZES.caption,
+    color: COLORS.primary,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  navButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: SIZES.m,
+    paddingVertical: 10,
+    borderRadius: SIZES.radiusPill,
+    ...SHADOWS.small,
+  },
+  navButtonText: {
+    color: COLORS.surface,
+    fontWeight: '700',
+    fontSize: SIZES.body2,
+  },
+  statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
+    gap: SIZES.m,
+    marginTop: SIZES.s,
   },
-  quickActionCard: {
-    width: '48%',
-    marginBottom: 12,
-    borderRadius: 16,
-    overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+  statBox: {
+    width: '47%',
+    backgroundColor: COLORS.surface,
+    borderRadius: SIZES.radiusLg,
+    padding: SIZES.l,
+    ...SHADOWS.small,
+    borderWidth: 1,
+    borderColor: '#F8FAFC',
   },
-  quickActionGradient: {
-    padding: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 100,
+  statBoxTablet: {
+    width: '23%',
   },
-  quickActionText: {
-    color: '#fff',
-    fontSize: 14,
+  statBoxValue: {
+    fontSize: SIZES.h2,
+    fontWeight: '800',
+    color: COLORS.text,
+  },
+  statBoxLabel: {
+    fontSize: SIZES.caption,
+    color: COLORS.textSecondary,
     fontWeight: '600',
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  tipsContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 24,
+    marginTop: 4,
   },
   tipCard: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    backgroundColor: '#FFFBEB', // Light amber background
+    borderRadius: SIZES.radiusXl,
+    padding: SIZES.xl,
+    marginTop: SIZES.s,
+    borderWidth: 1,
+    borderColor: '#FEF3C7',
   },
   tipHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: SIZES.m,
   },
   tipTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#11998e',
+    fontSize: SIZES.body1,
+    fontWeight: '800',
+    color: '#B45309',
     marginLeft: 8,
   },
   tipText: {
-    fontSize: 14,
-    color: '#333',
-    lineHeight: 20,
-    marginBottom: 16,
+    fontSize: SIZES.body1,
+    color: COLORS.textSecondary,
+    lineHeight: 24,
+    fontWeight: '500',
+    marginBottom: SIZES.xl,
   },
   tipFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#FEF3C7',
+    paddingTop: SIZES.m,
   },
   likeButton: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   likeCount: {
-    fontSize: 12,
-    color: '#666',
-    marginLeft: 4,
+    fontSize: SIZES.body2,
+    fontWeight: '700',
+    color: COLORS.textSecondary,
+    marginLeft: 6,
   },
   nextTipButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    backgroundColor: '#FEF3C7',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: SIZES.radiusPill,
   },
   nextTipText: {
-    fontSize: 12,
-    color: '#11998e',
-    fontWeight: '600',
+    fontSize: SIZES.caption,
+    fontWeight: '700',
+    color: COLORS.primaryDark,
     marginRight: 4,
   },
 });
 
-export default CompanyPortal; 
+export default CompanyPortal;
