@@ -1,41 +1,106 @@
 {
   "expo": {
     "name": "GreenIQ",
-    "jsEngine": "jsc",
-    "slug": "GreenIQ",
+    "slug": "greeniq",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/logo.png",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "jsEngine": "jsc",
     "newArchEnabled": true,
-    "packagerOpts": {
-      "hostType": "lan"
-    },
     "splash": {
-      "image": "./assets/logo.png",
+      "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#0F766E"
     },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.greeniq.app",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "GreenIQ needs camera access to scan waste items and QR codes for bin linking.",
+        "NSPhotoLibraryUsageDescription": "GreenIQ needs photo library access to select images for waste classification.",
+        "NSLocationWhenInUseUsageDescription": "GreenIQ needs your location to show nearby public bins and collection points.",
+        "NSLocationAlwaysUsageDescription": "GreenIQ needs your location to provide waste collection reminders.",
+        "NSMicrophoneUsageDescription": "GreenIQ may need microphone access for future features."
+      },
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/logo.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0F766E"
       },
-      "package": "com.greeniq.app"
+      "package": "com.greeniq.app",
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": ""
+        }
+      }
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
     },
     "plugins": [
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow GreenIQ to use your location to show nearby bins and collection points."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow GreenIQ to access your camera to scan waste items and QR codes."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Allow GreenIQ to access your photos to classify waste items."
+        }
+      ]
     ],
     "extra": {
       "eas": {
-        "projectId": "459e78c6-47b2-4ee4-942c-95222ae6e0b6"
+        "projectId": "305145da-5456-4606-8226-6181976a5f02"
       }
+    },
+    "owner": "newton_250",
+    "privacy": "unlisted",
+    "updates": {
+      "fallbackToCacheTimeout": 0,
+      "url": "https://u.expo.dev/305145da-5456-4606-8226-6181976a5f02"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
     }
   }
 }
+  

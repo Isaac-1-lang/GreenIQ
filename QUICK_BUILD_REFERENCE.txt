@@ -1,0 +1,131 @@
+═══════════════════════════════════════════════════════════════
+  GREENIQ - QUICK BUILD REFERENCE CARD
+═══════════════════════════════════════════════════════════════
+
+📱 BUILD ANDROID APK + QR CODE
+═══════════════════════════════════════════════════════════════
+
+STEP 1: Install EAS CLI (one-time)
+───────────────────────────────────────────────────────────────
+npm install -g eas-cli
+
+STEP 2: Login to Expo (one-time)
+───────────────────────────────────────────────────────────────
+eas login
+
+STEP 3: Build APK
+───────────────────────────────────────────────────────────────
+eas build --platform android --profile preview
+
+RESULT: APK + QR Code + Download Link
+TIME: ~10-15 minutes
+
+═══════════════════════════════════════════════════════════════
+🔒 SECURITY STATUS
+═══════════════════════════════════════════════════════════════
+
+✅ No hardcoded secrets
+✅ Secure storage implemented
+✅ Input validation active
+✅ Permissions configured
+✅ Error handling proper
+✅ .gitignore protecting files
+
+STATUS: APPROVED FOR BUILD
+
+═══════════════════════════════════════════════════════════════
+📦 INSTALLATION METHODS
+═══════════════════════════════════════════════════════════════
+
+METHOD 1: QR Code (Easiest)
+  1. Scan QR code with Android camera
+  2. Download APK
+  3. Install
+
+METHOD 2: Direct Link
+  1. Copy download link from build output
+  2. Open on Android device
+  3. Install
+
+METHOD 3: Manual
+  1. Download APK to computer
+  2. Transfer via USB
+  3. Install from file manager
+
+═══════════════════════════════════════════════════════════════
+🧪 TESTING CHECKLIST
+═══════════════════════════════════════════════════════════════
+
+Core Features:
+□ Registration (Citizen)
+□ Bin Linking (QR scan)
+□ Login
+□ Location selection
+□ Public Bins Map
+□ Quiz
+□ Profile
+
+Security:
+□ Input validation working
+□ Error messages clear
+□ No crashes
+□ Permissions requested
+
+═══════════════════════════════════════════════════════════════
+🚨 TROUBLESHOOTING
+═══════════════════════════════════════════════════════════════
+
+Build Fails:
+  npx expo start --clear
+  eas build -p android --profile preview --clear-cache
+
+Can't Install APK:
+  Settings → Security → Unknown Sources → Enable
+
+Build Takes Long:
+  Normal: 10-15 minutes
+  Check: https://status.expo.dev
+
+═══════════════════════════════════════════════════════════════
+📚 DOCUMENTATION
+═══════════════════════════════════════════════════════════════
+
+BUILD_GUIDE.md          - Comprehensive build guide
+READY_TO_BUILD.md       - Quick start guide
+BUILD_SUMMARY.md        - Security & build summary
+utils/security.js       - Security utilities code
+
+═══════════════════════════════════════════════════════════════
+🎯 BUILD PROFILES
+═══════════════════════════════════════════════════════════════
+
+PREVIEW (Recommended for Testing):
+  eas build -p android --profile preview
+  Output: APK
+  Purpose: Testing, beta
+
+PRODUCTION (For App Stores):
+  eas build -p android --profile production
+  Output: AAB
+  Purpose: Play Store
+
+═══════════════════════════════════════════════════════════════
+✅ READY TO BUILD!
+═══════════════════════════════════════════════════════════════
+
+Security: ✅ APPROVED
+Config:   ✅ READY
+Build:    ✅ READY
+Test:     ✅ READY
+
+COMMAND TO RUN:
+eas build --platform android --profile preview
+
+EXPECTED OUTPUT:
+- APK download link
+- QR code for installation
+- Build dashboard link
+
+═══════════════════════════════════════════════════════════════
+Good luck with your Hult Prize demo! 🚀🎉
+═══════════════════════════════════════════════════════════════

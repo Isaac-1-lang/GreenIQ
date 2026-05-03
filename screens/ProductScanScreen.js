@@ -17,7 +17,7 @@ import {
   heightPercentageToDP as hp,
 } from "react-native-responsive-screen";
 import { getProductGrades } from "../utils/ProductGrade";
-import NoProductImage from "../assets/NoProductImage.png";
+import NoProductImage from "../assets/adaptive-icon.png";
 import axios from "axios";
 import { deepSeekRecommendation } from "../utils/DeepSeekAnalysis";
 import { cleanText } from "../utils/cleanText";
