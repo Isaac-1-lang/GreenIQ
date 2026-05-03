@@ -74,7 +74,7 @@ const RegisterScreen = ({ navigation, route }) => {
   }, [route?.params?.selectedLocation]);
 
   const validatePhoneNumber = (phone) => {
-    const phoneRegex = /^\+250[0-9]{8}$/;
+    const phoneRegex = /^\+250[0-9]{9}$/;
     return phoneRegex.test(phone);
   };
 
@@ -97,7 +97,7 @@ const RegisterScreen = ({ navigation, route }) => {
     }
 
     if (!validatePhoneNumber(phoneNumber)) {
-      Toast.show({ type: "error", text1: "Invalid Phone Number", text2: "Please enter a valid Rwandan phone number (+250XXXXXXXX)." });
+      Toast.show({ type: "error", text1: "Invalid Phone Number", text2: "Please enter a valid Rwandan phone number (+250XXXXXXXXX)." });
       return;
     }
 
@@ -107,9 +107,16 @@ const RegisterScreen = ({ navigation, route }) => {
       Toast.show({
         type: 'success',
         text1: 'Account Created',
-        text2: userType === 'citizen' ? 'Check your email to verify' : 'Company account created'
+        text2: userType === 'citizen' ? 'Now link your smart bin!' : 'Company account created'
       });
-      setTimeout(() => navigation.navigate('Login'), 1500);
+      // Navigate to Bin Linking for citizens, Login for companies
+      setTimeout(() => {
+        if (userType === 'citizen') {
+          navigation.navigate('BinLinking');
+        } else {
+          navigation.navigate('Login');
+        }
+      }, 1500);
     } catch (error) {
       Toast.show({ type: "error", text1: "Registration failed", text2: error?.response?.data?.message || "Registration failed." });
     } finally {

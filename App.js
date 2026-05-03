@@ -30,6 +30,7 @@ import Rewards from './screens/Rewards';
 import ReferralScreen from './screens/ReferralScreen';
 import SafeZoneAlerts from './screens/SafeZoneAlerts';
 import PublicBinsMap from './screens/PublicBinsMap';
+import BinLinkingScreen from './screens/BinLinkingScreen';
 import ScanChoiceScreen from './screens/ScanChoiceScreen';
 import ProductScanScreen from './screens/ProductScanScreen';
 import ClassificationResultScreen from './screens/ClassificationResultScreen';
@@ -275,6 +276,7 @@ function App() {
           <Stack.Screen name="Welcome" component={WelcomeScreen} />
           <Stack.Screen name="Login" component={LoginScreen} />
           <Stack.Screen name="Register" component={SignupScreen} />
+          <Stack.Screen name="BinLinking" component={BinLinkingScreen} />
           <Stack.Screen name="LocationSelection" component={LocationSelectionScreen} />
           
           {/* Main app screens (with tab bar) */}

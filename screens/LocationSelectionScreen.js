@@ -18,17 +18,17 @@ const { width } = Dimensions.get('window');
 const LocationSelectionScreen = ({ navigation }) => {
   const [selectedPoint, setSelectedPoint] = useState(null);
 
-  const seoulRegion = {
-    latitude: 37.5665,
-    longitude: 126.9780,
-    latitudeDelta: 0.3,
-    longitudeDelta: 0.3,
+  const kigaliRegion = {
+    latitude: -1.9441,
+    longitude: 30.0619,
+    latitudeDelta: 0.15,
+    longitudeDelta: 0.15,
   };
 
   const confirmSelection = () => {
     if (!selectedPoint) return;
     navigation.navigate({
-      name: 'Signup',
+      name: 'Register',
       params: { selectedLocation: selectedPoint.name },
       merge: true,
     });
@@ -47,7 +47,7 @@ const LocationSelectionScreen = ({ navigation }) => {
         <MapView
           provider={PROVIDER_GOOGLE}
           style={styles.map}
-          initialRegion={seoulRegion}
+          initialRegion={kigaliRegion}
         >
           {wastePoints.map((point) => (
             <Marker

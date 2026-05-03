@@ -184,7 +184,7 @@ const HomeScreen = ({ navigation }) => {
             />
           ) : (
             <View style={styles.avatarPlaceholder}>
-              <Ionicons name="person" size={24} color={COLORS.primaryDark} />
+              <Ionicons name="person" size={28} color={COLORS.primary} />
             </View>
           )}
         </TouchableOpacity>
@@ -351,7 +351,6 @@ const HomeScreen = ({ navigation }) => {
           </View>
         )}
       </RNAnimated.View>
-        
       <TouchableOpacity 
         style={styles.fabButton}
         onPress={toggleQuickActions}
@@ -419,9 +418,12 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#E0F2FE',
+    backgroundColor: COLORS.primaryLight,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 2,
+    borderColor: COLORS.primary,
+    ...SHADOWS.small,
   },
   scrollContent: {
     paddingHorizontal: SIZES.l,
