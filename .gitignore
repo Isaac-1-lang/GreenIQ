@@ -72,10 +72,6 @@ dist/
 web-build/
 
 # Environment variables
-.env
-.env.local
-.env.production
-.env.development
 
 # Secrets and credentials
 google-services.json
@@ -90,3 +86,4 @@ logs
 # Misc
 .vscode/
 .history/
+config.bat
