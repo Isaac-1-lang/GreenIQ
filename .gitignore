@@ -35,7 +35,6 @@ expo-env.d.ts
 *.mobileprovision
 
 
-temp_auto_push.bat
 
 # Metro
 
@@ -74,5 +73,3 @@ yarn-error.*
 venv
 
 config.bat
-.gitignore
-branch_structure.json
